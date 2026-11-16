@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabstock - Super-Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E3A8A', // Bleu Outremer
+                        success: '#059669', // Vert Émeraude
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="h-full bg-slate-100 font-sans text-slate-900 flex flex-col">
+
+    <!-- HEADER SUPER-ADMIN -->
+    <header class="bg-primary text-white shadow-md px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <div class="bg-white/10 p-2.5 rounded-xl">
+                <i class="fa-solid fa-shield-halved text-2xl text-emerald-400"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold flex items-center gap-2">Gab<span class="text-success">stock</span> <span class="bg-amber-500 text-slate-900 text-xs px-2 py-0.5 rounded-full font-bold uppercase">Super-Admin</span></h1>
+                <p class="text-xs text-blue-200">Centre de contrôle global & Validation Mobile Money</p>
+            </div>
+        </div>
+        <button onclick="openConfigModal()" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2">
+            <i class="fa-solid fa-gear"></i> Configurer Supabase
+        </button>
+    </header>
+
+    <!-- CONTENU PRINCIPAL -->
+    <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
+
+        <!-- KPI FINANCIERS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-xs text-slate-500 font-bold uppercase">Revenu Global Encaissé</p>
+                <h3 id="kpi-revenue" class="text-3xl font-extrabold text-success mt-2">0 FCFA</h3>
+                <span class="text-xs text-slate-400 mt-1 block">Frais (50k) + Abonnements (10k)</span>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-xs text-slate-500 font-bold uppercase">Établissements Actifs</p>
+                <h3 id="kpi-active" class="text-3xl font-extrabold text-primary mt-2">0</h3>
+                <span class="text-xs text-emerald-600 font-semibold mt-1 block">Licences en cours</span>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-xs text-slate-500 font-bold uppercase">En Attente de Validation</p>
+                <h3 id="kpi-pending" class="text-3xl font-extrabold text-amber-600 mt-2">0</h3>
+                <span class="text-xs text-amber-500 font-semibold mt-1 block">Paiements à vérifier</span>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-xs text-slate-500 font-bold uppercase">Suspendus / Expirés</p>
+                <h3 id="kpi-expired" class="text-3xl font-extrabold text-rose-600 mt-2">0</h3>
+                <span class="text-xs text-slate-400 mt-1 block">Accès verrouillés</span>
+            </div>
+        </div>
+
+        <!-- TABLEAU DE GESTION DES ÉTABLISSEMENTS -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-store mr-2 text-primary"></i> Liste des Établissements & Preuves de Paiement</h3>
+                <button onclick="loadEstablishments()" class="bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-700 transition">
+                    <i class="fa-solid fa-rotate mr-1"></i> Actualiser
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                        <tr>
+                            <th class="p-4">Établissement</th>
+                            <th class="p-4">Activité & Contact</th>
+                            <th class="p-4">Référence Mobile Money</th>
+                            <th class="p-4">Statut</th>
+                            <th class="p-4">Échéance</th>
+                            <th class="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="est-table-body" class="divide-y divide-slate-200 text-sm">
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-slate-400">Chargement des données Supabase...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL CONFIGURATION SUPABASE -->
+    <div id="config-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <h3 class="text-xl font-bold text-slate-800">Configuration Supabase</h3>
+            <p class="text-xs text-slate-500">Saisis tes identifiants Supabase pour synchroniser ton panneau Super-Admin.</p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Project URL</label>
+                    <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Anon Public Key</label>
+                    <input type="password" id="cfg-key" placeholder="eyJhbGciOiJIUzI1Ni..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-mono">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeConfigModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm">Annuler</button>
+                <button onclick="saveConfig()" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-blue-900">Enregistrer & Connecter</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let SUPABASE_URL = localStorage.getItem('gabstock_admin_url') || https://qmyseukcqlkphsxiivrm.supabase.co;
+        let SUPABASE_ANON_KEY = localStorage.getItem('gabstock_admin_key') || eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFteXNldWtjcWxrcGhzeGlpdnJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3OTIyMzksImV4cCI6MjExMDM2ODIzOX0.srJB8lCXD6e58SJ-ceiNYLBUmf0TOdgViMcFc3QMwI8;
+        let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (SUPABASE_URL.includes(https://qmyseukcqlkphsxiivrm.supabase.co)) {
+                openConfigModal();
+            } else {
+                loadEstablishments();
+            }
+        });
+
+        function openConfigModal() {
+            document.getElementById('cfg-url').value = SUPABASE_URL;
+            document.getElementById('cfg-key').value = SUPABASE_ANON_KEY;
+            document.getElementById('config-modal').classList.remove('hidden');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('config-modal').classList.add('hidden');
+        }
+
+        function saveConfig() {
+            SUPABASE_URL = document.getElementById('cfg-url').value.trim();
+            SUPABASE_ANON_KEY = document.getElementById('cfg-key').value.trim();
+            localStorage.setItem('gabstock_admin_url', SUPABASE_URL);
+            localStorage.setItem('gabstock_admin_key', SUPABASE_ANON_KEY);
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            closeConfigModal();
+            loadEstablishments();
+        }
+
+        async function loadEstablishments() {
+            const { data: ests, error: estError } = await supabaseClient
+                .from('establishments')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const { data: payments } = await supabaseClient
+                .from('saas_payments')
+                .select('*');
+
+            if (estError) {
+                document.getElementById('est-table-body').innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-600">Erreur Supabase : ${estError.message}</td></tr>`;
+                return;
+            }
+
+            let totalRevenue = 0;
+            if (payments) payments.forEach(p => totalRevenue += Number(p.amount));
+            document.getElementById('kpi-revenue').innerText = totalRevenue.toLocaleString() + " FCFA";
+
+            let activeCount = 0, pendingCount = 0, expiredCount = 0;
+            const tbody = document.getElementById('est-table-body');
+            tbody.innerHTML = '';
+
+            if (!ests || ests.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Aucun établissement inscrit.</td></tr>`;
+                return;
+            }
+
+            for (let est of ests) {
+                if (est.subscription_status === 'active') activeCount++;
+                else if (est.subscription_status === 'pending') pendingCount++;
+                else expiredCount++;
+
+                const payInfo = payments ? payments.find(p => p.establishment_id === est.id) : null;
+                const refText = payInfo ? payInfo.reference_number : 'Aucune référence';
+
+                const icons = { 'bar': '🍸', 'bar-restaurant': '🍽️', 'boutique': '🛍️' };
+                const badges = {
+                    'active': '<span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs">Actif</span>',
+                    'pending': '<span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-bold text-xs">En attente</span>',
+                    'expired': '<span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full font-bold text-xs">Suspendu</span>'
+                };
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-800">${icons[est.activity_type] || ''} ${est.name}</td>
+                    <td class="p-4 text-xs text-slate-600">
+                        <span class="font-semibold text-slate-800 block">${est.phone}</span>
+                        <span class="uppercase tracking-wider text-[10px] text-blue-600 font-bold">${est.activity_type}</span>
+                    </td>
+                    <td class="p-4 font-mono text-xs text-slate-700 font-semibold">${refText}</td>
+                    <td class="p-4">${badges[est.subscription_status] || est.subscription_status}</td>
+                    <td class="p-4 text-xs text-slate-500">${est.next_due_date ? new Date(est.next_due_date).toLocaleDateString() : '-'}</td>
+                    <td class="p-4 text-right space-x-1 whitespace-nowrap">
+                        <button onclick="validatePayment('${est.id}')" title="Valider & Activer 30j" class="bg-success text-white p-2 rounded-xl hover:bg-emerald-700 transition shadow-sm"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="suspendEstablishment('${est.id}')" title="Suspendre l'accès" class="bg-amber-500 text-white p-2 rounded-xl hover:bg-amber-600 transition shadow-sm"><i class="fa-solid fa-ban"></i></button>
+                        <button onclick="deleteEstablishment('${est.id}')" title="Supprimer définitivement" class="bg-rose-600 text-white p-2 rounded-xl hover:bg-rose-700 transition shadow-sm"><i class="fa-solid fa-trash"></i></button>
+                        <a href="https://wa.me/${est.phone.replace(/[^0-9]/g, '')}?text=Bonjour,%20votre%20compte%20Gabstock%20pour%20${encodeURIComponent(est.name)}%20est%20actif !" target="_blank" title="Envoyer WhatsApp" class="inline-block bg-emerald-600 text-white p-2 rounded-xl hover:bg-emerald-700 transition shadow-sm"><i class="fa-brands fa-whatsapp"></i></a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            document.getElementById('kpi-active').innerText = activeCount;
+            document.getElementById('kpi-pending').innerText = pendingCount;
+            document.getElementById('kpi-expired').innerText = expiredCount;
+        }
+
+        async function validatePayment(estId) {
+            const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const { error } = await supabaseClient
+                .from('establishments')
+                .update({ setup_fee_paid: true, subscription_status: 'active', next_due_date: nextMonth })
+                .eq('id', estId);
+
+            if (error) alert("Erreur : " + error.message);
+            else { alert("Compte validé et activé pour 30 jours !"); loadEstablishments(); }
+        }
+
+        async function suspendEstablishment(estId) {
+            if (!confirm("Suspendre l'accès de cet établissement ?")) return;
+            const { error } = await supabaseClient
+                .from('establishments')
+                .update({ subscription_status: 'expired' })
+                .eq('id', estId);
+
+            if (error) alert("Erreur : " + error.message);
+            else { alert("Établissement suspendu."); loadEstablishments(); }
+        }
+
+        async function deleteEstablishment(estId) {
+            if (!confirm("Supprimer définitivement cet établissement ?")) return;
+            const { error } = await supabaseClient
+                .from('establishments')
+                .delete()
+                .eq('id', estId);
+
+            if (error) alert("Erreur : " + error.message);
+            else { alert("Établissement supprimé."); loadEstablishments(); }
+        }
+    </script>
+</body>
+</html>
