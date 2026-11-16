@@ -124,11 +124,8 @@
         let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         window.addEventListener('DOMContentLoaded', () => {
-            if (SUPABASE_URL.includes(https://qmyseukcqlkphsxiivrm.supabase.co)) {
-                openConfigModal();
-            } else {
-                loadEstablishments();
-            }
+            // CORRECTION : Appel direct du chargement des établissements
+            loadEstablishments();
         });
 
         function openConfigModal() {
