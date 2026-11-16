@@ -119,8 +119,8 @@
     </div>
 
     <script>
-        let SUPABASE_URL = localStorage.getItem('gabstock_admin_url') || https://qmyseukcqlkphsxiivrm.supabase.co;
-        let SUPABASE_ANON_KEY = localStorage.getItem('gabstock_admin_key') || eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFteXNldWtjcWxrcGhzeGlpdnJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3OTIyMzksImV4cCI6MjExMDM2ODIzOX0.srJB8lCXD6e58SJ-ceiNYLBUmf0TOdgViMcFc3QMwI8;
+        let SUPABASE_URL = localStorage.getItem('gabstock_admin_url') || 'https://qmyseukcqlkphsxiivrm.supabase.co';
+        let SUPABASE_ANON_KEY = localStorage.getItem('gabstock_admin_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFteXNldWtjcWxrcGhzeGlpdnJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3OTIyMzksImV4cCI6MjExMDM2ODIzOX0.srJB8lCXD6e58SJ-ceiNYLBUmf0TOdgViMcFc3QMwI8';
         let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         window.addEventListener('DOMContentLoaded', () => {
