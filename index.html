@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabstock - Gestion de Stock & Ventes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1E3A8A', // Bleu Outremer
+                        success: '#059669', // Vert Émeraude
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="h-full bg-slate-50 font-sans text-slate-900 flex flex-col">
+
+    <!-- ÉCRAN D'INSCRIPTION & PAIEMENT MOBILE MONEY (SAS) -->
+    <div id="auth-screen" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-8 overflow-y-auto max-h-[90vh]">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center bg-gradient-to-br from-primary to-blue-600 p-3 rounded-2xl shadow-lg mb-3">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
+                        <path d="M4 7v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7"></path>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-extrabold text-primary">Gab<span class="text-success">stock</span></h1>
+                <p class="text-sm text-slate-500 uppercase tracking-widest font-semibold mt-1">Plateforme SaaS - Gestion Stock & Ventes</p>
+            </div>
+
+            <form id="setup-form" onsubmit="handleRegistration(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nom de l'établissement</label>
+                    <input type="text" id="est-name" required placeholder="Ex: Le Grill du Bord de Mer" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Votre Numéro de Téléphone</label>
+                    <input type="tel" id="est-phone" required placeholder="Ex: +241 07 00 00 00" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Type d'activité</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <label class="border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center cursor-pointer hover:border-primary transition has-[:checked]:border-primary has-[:checked]:bg-blue-50">
+                            <input type="radio" name="activity_type" value="bar" required class="sr-only">
+                            <span class="text-2xl mb-1">🍸</span>
+                            <span class="text-xs font-bold text-center">Bar / Lounge</span>
+                        </label>
+                        <label class="border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center cursor-pointer hover:border-primary transition has-[:checked]:border-primary has-[:checked]:bg-blue-50">
+                            <input type="radio" name="activity_type" value="bar-restaurant" class="sr-only">
+                            <span class="text-2xl mb-1">🍽️</span>
+                            <span class="text-xs font-bold text-center">Bar-Restaurant</span>
+                        </label>
+                        <label class="border-2 border-slate-200 rounded-xl p-3 flex flex-col items-center cursor-pointer hover:border-primary transition has-[:checked]:border-primary has-[:checked]:bg-blue-50">
+                            <input type="radio" name="activity_type" value="boutique" class="sr-only">
+                            <span class="text-2xl mb-1">🛍️</span>
+                            <span class="text-xs font-bold text-center">Boutique</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- NUMÉROS MOBILE MONEY OFFICIELS -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-extrabold text-blue-900">Frais d'activation uniques :</span>
+                        <span class="text-lg font-extrabold text-success">50 000 FCFA</span>
+                    </div>
+                    <p class="text-xs text-slate-600">Transférez les 50 000 FCFA sur l'un de nos numéros officiels avant de valider :</p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-white p-2.5 rounded-lg border border-blue-100 flex flex-col">
+                            <span class="font-bold text-orange-600"><i class="fa-solid fa-mobile-screen"></i> Airtel Money</span>
+                            <span class="font-mono font-extrabold text-slate-800 text-sm mt-1">074 25 34 44</span>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-lg border border-blue-100 flex flex-col">
+                            <span class="font-bold text-yellow-600"><i class="fa-solid fa-mobile-screen"></i> Moov Money</span>
+                            <span class="font-mono font-extrabold text-slate-800 text-sm mt-1">062 90 66 77</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PREUVE DE PAIEMENT -->
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Opérateur utilisé</label>
+                        <select id="payment-provider" required class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="Airtel Money">Airtel Money (074 25 34 44)</option>
+                            <option value="Moov Money">Moov Money (062 90 66 77)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">ID / Référence de transaction SMS</label>
+                        <input type="text" id="payment-ref" required placeholder="Ex: MP261116.1420.A89421" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-primary focus:outline-none font-mono">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-success hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Soumettre ma preuve & Demander l'accès
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ÉCRAN D'ATTENTE DE VALIDATION (PENDING) -->
+    <div id="pending-screen" class="hidden fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center space-y-4">
+            <div class="inline-flex items-center justify-center bg-amber-100 text-amber-600 w-16 h-16 rounded-full text-2xl mb-2">
+                <i class="fa-solid fa-hourglass-half animate-spin"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800">Paiement en attente de validation</h2>
+            <p class="text-sm text-slate-600">
+                Nous vérifions votre référence de paiement Mobile Money. Votre accès sera débloqué dès validation par l'administration.
+            </p>
+            <div class="pt-4 space-y-2">
+                <button onclick="checkAccountStatus()" class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition">
+                    <i class="fa-solid fa-rotate mr-1"></i> Vérifier mon activation
+                </button>
+                <a href="https://wa.me/24174253444?text=Bonjour,%20j'ai%20effectué%20mon%20paiement%20Gabstock.%20Merci%20de%20valider%20mon%20compte." target="_blank" class="w-full bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-lg"></i> Relancer le support sur WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION PRINCIPALE (DÉBLOQUÉE QUAND SUBSCRIPTION = ACTIVE) -->
+    <div id="app-container" class="hidden h-full flex flex-col">
+        <header class="bg-primary text-white shadow-md px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2 rounded-xl">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"></path>
+                        <path d="M4 7v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7"></path>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h2 id="header-est-name" class="text-lg font-bold flex items-center gap-2">Mon Établissement</h2>
+                    <p id="header-est-type" class="text-xs text-blue-200 uppercase tracking-wider">Activité</p>
+                </div>
+            </div>
+            <nav class="flex flex-wrap gap-2">
+                <button onclick="switchTab('dashboard', event)" class="nav-btn px-4 py-2 rounded-lg bg-white/20 font-medium text-sm transition"><i class="fa-solid fa-chart-pie mr-1"></i> Tableau de bord</button>
+                <button onclick="switchTab('pos', event)" class="nav-btn px-4 py-2 rounded-lg hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-cash-register mr-1"></i> Caisse</button>
+                <button onclick="switchTab('stock', event)" class="nav-btn px-4 py-2 rounded-lg hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-boxes-stacked mr-1"></i> Stock</button>
+                <button onclick="switchTab('subscription', event)" class="nav-btn px-4 py-2 rounded-lg hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-id-card mr-1"></i> Abonnement</button>
+            </nav>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6">
+            <section id="tab-dashboard" class="space-y-6">
+                <h3 class="text-2xl font-bold text-slate-800">Vue d'ensemble</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase">Chiffre d'Affaires</p>
+                        <h4 id="stat-ca" class="text-2xl font-extrabold text-primary mt-2">0 FCFA</h4>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase">Valeur Stock</p>
+                        <h4 id="stat-stock-val" class="text-2xl font-extrabold text-success mt-2">0 FCFA</h4>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase">Commandes</p>
+                        <h4 id="stat-orders" class="text-2xl font-extrabold text-amber-600 mt-2">0</h4>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <p class="text-xs text-slate-500 font-semibold uppercase">Alertes Stock</p>
+                        <h4 id="stat-alerts" class="text-2xl font-extrabold text-rose-600 mt-2">0</h4>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-pos" class="hidden space-y-4">
+                <h3 class="text-xl font-bold text-slate-800">Module Caisse & Encaissement</h3>
+                <p class="text-sm text-slate-500">Prêt pour l'enregistrement des ventes et commandes.</p>
+            </section>
+
+            <section id="tab-stock" class="hidden space-y-4">
+                <h3 class="text-xl font-bold text-slate-800">Gestion des Stocks</h3>
+                <p class="text-sm text-slate-500">Gérez vos articles, bouteilles, plats et seuils d'alerte.</p>
+            </section>
+
+            <section id="tab-subscription" class="hidden space-y-4">
+                <h3 class="text-xl font-bold text-slate-800">État de votre Abonnement Gabstock</h3>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-lg space-y-3">
+                    <p class="text-sm">Statut : <span id="sub-badge" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs">Actif</span></p>
+                    <p class="text-sm text-slate-500">Prochaine échéance mensuelle (10 000 FCFA) : <strong id="sub-due">-</strong></p>
+                    <div class="bg-amber-50 p-4 rounded-xl text-xs space-y-2 border border-amber-200">
+                        <p class="font-bold text-amber-900">Renouvellement mensuel (10 000 FCFA) :</p>
+                        <p>Transférez sur Airtel Money (<strong>074 25 34 44</strong>) ou Moov Money (<strong>062 90 66 77</strong>) puis envoyez votre référence au support WhatsApp.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
