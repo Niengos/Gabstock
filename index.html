@@ -23,13 +23,41 @@
 </head>
 <body class="h-full bg-slate-50 font-sans text-slate-900 flex flex-col">
 
-    <!-- ÉCRAN D'INSCRIPTION & PAIEMENT MOBILE MONEY (SAS) -->
-    <div id="auth-screen" class="fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-8 space-y-6 my-auto">
+    <!-- ÉCRAN DE CONNEXION (LOGIN) POUR LES GÉRANTS -->
+    <div id="login-screen" class="fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6">
             <div class="text-center">
-                <div class="inline-flex items-center justify-center bg-gradient-to-br from-primary to-blue-700 p-4 rounded-2xl shadow-lg mb-3 text-white text-2xl font-black">
+                <div class="inline-flex items-center justify-center bg-primary p-4 rounded-2xl shadow-lg mb-3 text-white text-2xl font-black">
                     <i class="fa-solid fa-boxes-stacked text-emerald-400"></i> Gab<span class="text-success">stock</span>
                 </div>
+                <h1 class="text-2xl font-extrabold text-slate-800">Connexion Établissement</h1>
+                <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-1">Accédez à votre espace POS & Stock</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'établissement ou Téléphone</label>
+                    <input type="text" id="login-identity" required placeholder="Ex: Jaco bar" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe personnel</label>
+                    <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3.5 rounded-xl transition shadow-lg text-sm">
+                    Se connecter
+                </button>
+            </form>
+
+            <div class="text-center pt-2 border-t border-slate-100">
+                <p class="text-xs text-slate-500">Pas encore de compte ? <button onclick="showRegisterScreen()" class="text-primary font-bold hover:underline">Activer mon établissement</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ÉCRAN D'INSCRIPTION & PAIEMENT MOBILE MONEY (SAS) -->
+    <div id="auth-screen" class="hidden fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-8 space-y-6 my-auto">
+            <div class="text-center">
                 <h1 class="text-2xl font-extrabold text-slate-800">Activation de votre Établissement</h1>
                 <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-1">Solution POS & ERP - Gabon (FCFA)</p>
             </div>
@@ -37,11 +65,15 @@
             <form id="setup-form" onsubmit="handleRegistration(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'établissement</label>
-                    <input type="text" id="est-name" required placeholder="Ex: La Cachette de Tatou" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
+                    <input type="text" id="est-name" required placeholder="Ex: Jaco bar" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Votre Numéro de Téléphone</label>
                     <input type="tel" id="est-phone" required placeholder="Ex: +241 07 00 00 00" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Définissez votre mot de passe secret</label>
+                    <input type="password" id="est-password" required placeholder="Ex: monmotdepasse123" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-2">Type d'activité</label>
@@ -66,7 +98,7 @@
 
                 <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 space-y-3">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-extrabold text-blue-900 uppercase">Frais d'activation uniques :</span>
+                        <span class="text-xs font-extrabold text-blue-900 uppercase">Frais d'activation :</span>
                         <span class="text-base font-extrabold text-success">50 000 FCFA</span>
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-xs">
@@ -96,9 +128,12 @@
                 </div>
 
                 <button type="submit" class="w-full bg-success hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg text-sm">
-                    <i class="fa-solid fa-paper-plane mr-2"></i> Soumettre ma preuve & Demander l'accès
+                    Soumettre ma preuve & Demander l'accès
                 </button>
             </form>
+            <div class="text-center pt-2">
+                <button onclick="showLoginScreen()" class="text-xs text-slate-500 hover:underline">Déjà inscrit ? Se connecter</button>
+            </div>
         </div>
     </div>
 
@@ -109,19 +144,19 @@
                 <i class="fa-solid fa-hourglass-half animate-spin"></i>
             </div>
             <h2 class="text-2xl font-bold text-slate-800">Paiement en attente de validation</h2>
-            <p class="text-sm text-slate-600">Votre accès sera débloqué instantanément dès validation par l'administration.</p>
+            <p class="text-sm text-slate-600">Votre accès sera débloqué dès validation par l'administration.</p>
             <div class="pt-4 space-y-2">
                 <button onclick="checkAccountStatus()" class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition text-sm">
-                    <i class="fa-solid fa-rotate mr-1"></i> Vérifier mon activation
+                    Vérifier mon activation
                 </button>
-                <a href="https://wa.me/24174253444?text=Bonjour,%20j'ai%20effectué%20mon%20paiement%20Gabstock." target="_blank" class="w-full bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 transition flex items-center justify-center gap-2 text-sm">
-                    <i class="fa-brands fa-whatsapp text-lg"></i> Relancer le support WhatsApp
-                </a>
+                <button onclick="logoutToLogin()" class="w-full bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl hover:bg-slate-200 transition text-xs">
+                    Retour à l'accueil
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- APPLICATION PRINCIPALE -->
+    <!-- APPLICATION PRINCIPALE (DÉBLOQUÉE) -->
     <div id="app-container" class="hidden h-full flex flex-col">
         <header class="bg-primary text-white shadow-md px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center gap-3">
@@ -133,19 +168,22 @@
                     <p id="header-est-type" class="text-xs text-blue-200 uppercase tracking-wider font-semibold">Activité</p>
                 </div>
             </div>
-            <nav class="flex flex-wrap gap-2">
-                <button onclick="switchTab('dashboard', event)" class="nav-btn px-4 py-2 rounded-xl bg-white/20 font-medium text-sm transition"><i class="fa-solid fa-chart-pie mr-1"></i> Tableau de bord</button>
-                <button onclick="switchTab('pos', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-cash-register mr-1"></i> Caisse & Retraits</button>
-                <button onclick="switchTab('stock', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-boxes-stacked mr-1"></i> Stock</button>
-                <button onclick="switchTab('subscription', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-id-card mr-1"></i> Abonnement</button>
-            </nav>
+            <div class="flex items-center gap-3">
+                <nav class="flex flex-wrap gap-2">
+                    <button onclick="switchTab('dashboard', event)" class="nav-btn px-4 py-2 rounded-xl bg-white/20 font-medium text-sm transition"><i class="fa-solid fa-chart-pie mr-1"></i> Tableau de bord</button>
+                    <button onclick="switchTab('pos', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-cash-register mr-1"></i> Caisse</button>
+                    <button onclick="switchTab('stock', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-boxes-stacked mr-1"></i> Stock</button>
+                    <button onclick="switchTab('subscription', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-id-card mr-1"></i> Abonnement</button>
+                </nav>
+                <button onclick="logoutToLogin()" title="Déconnexion" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl text-xs transition">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
-            
-            <!-- TABLEAU DE BORD ÉPURÉ & GRAPHIQUE 7 JOURS -->
+            <!-- Tableaux de bord, Caisse, Stock, Abonnement (Identiques aux précédents) -->
             <section id="tab-dashboard" class="space-y-6">
-                <!-- Bannière d'alerte d'abonnement (si < 7 jours) -->
                 <div id="sub-warning-banner" class="hidden bg-amber-500 text-slate-900 p-4 rounded-2xl font-bold flex justify-between items-center shadow-md">
                     <span><i class="fa-solid fa-triangle-exclamation mr-2"></i> Attention : Votre abonnement expire bientôt ! Pensez à renouveler (10 000 FCFA).</span>
                     <button onclick="switchTab('subscription', event)" class="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs">Voir l'abonnement</button>
@@ -153,7 +191,6 @@
 
                 <h3 class="text-2xl font-bold text-slate-800">Vue d'ensemble de l'activité</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Ventes du jour épurées avec bouton vers le détail -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3 flex flex-col justify-between">
                         <div>
                             <p class="text-xs text-slate-500 font-semibold uppercase">Ventes du Jour (<span id="today-date-label">-</span>)</p>
@@ -179,20 +216,14 @@
                     </div>
                 </div>
 
-                <!-- GRAPHIQUE DES 7 DERNIERS JOURS -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                     <h4 class="font-bold text-slate-800 flex items-center gap-2">
                         <i class="fa-solid fa-chart-column text-primary"></i> Évolution du Chiffre d'Affaires (7 derniers jours)
                     </h4>
-                    <div class="grid grid-cols-7 gap-2 items-end h-40 pt-6 border-b border-slate-200 px-2" id="weekly-chart-bars">
-                        <!-- Les barres du graphique seront injectées ici -->
-                    </div>
-                    <div class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-slate-500 uppercase" id="weekly-chart-labels">
-                        <!-- Les jours de la semaine seront injectés ici -->
-                    </div>
+                    <div class="grid grid-cols-7 gap-2 items-end h-40 pt-6 border-b border-slate-200 px-2" id="weekly-chart-bars"></div>
+                    <div class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-slate-500 uppercase" id="weekly-chart-labels"></div>
                 </div>
 
-                <!-- Alertes Stock -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                     <h4 class="font-bold text-slate-800 flex items-center gap-2">
                         <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Produits en alerte stock bas
@@ -203,7 +234,7 @@
                 </div>
             </section>
 
-            <!-- MODALE / SECTION DÉTAIL DES VENTES DU JOUR -->
+            <!-- MODALE DÉTAIL VENTES -->
             <div id="today-details-modal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
                 <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-4">
                     <div class="flex justify-between items-center border-b pb-3">
@@ -228,7 +259,7 @@
                 </div>
             </div>
 
-            <!-- CAISSE, ENCAISSEMENT & RETRAITS DE CAISSE -->
+            <!-- CAISSE -->
             <section id="tab-pos" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
@@ -237,76 +268,60 @@
                             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
                                 <div class="flex justify-between"><span>Total Encaissé :</span> <strong id="cashbox-total" class="font-mono text-success">0 FCFA</strong></div>
                                 <div class="flex justify-between"><span>Total Retirés :</span> <strong id="cashbox-withdrawals" class="font-mono text-rose-600">0 FCFA</strong></div>
-                                <div class="border-t pt-2 flex justify-between text-sm font-bold"><span>Solde Réel en Caisse :</span> <strong id="cashbox-balance" class="font-mono text-primary">0 FCFA</strong></div>
+                                <div class="border-t pt-2 flex justify-between text-sm font-bold"><span>Solde Réel :</span> <strong id="cashbox-balance" class="font-mono text-primary">0 FCFA</strong></div>
                             </div>
                         </div>
-
                         <div class="border-t pt-4 space-y-3">
-                            <h5 class="font-bold text-xs text-slate-700 uppercase"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> Effectuer un retrait de caisse</h5>
+                            <h5 class="font-bold text-xs text-slate-700 uppercase">Effectuer un retrait</h5>
                             <form onsubmit="handleCashWithdrawal(event)" class="space-y-3">
                                 <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Motif du retrait</label>
-                                    <input type="text" id="withdrawal-reason" required placeholder="Ex: Achat glace / Fournisseur" class="w-full px-3 py-2 border rounded-xl text-xs">
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Motif</label>
+                                    <input type="text" id="withdrawal-reason" required placeholder="Ex: Achat glace" class="w-full px-3 py-2 border rounded-xl text-xs">
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-bold text-slate-500 uppercase">Montant (FCFA)</label>
                                     <input type="number" id="withdrawal-amount" required placeholder="5000" class="w-full px-3 py-2 border rounded-xl text-xs font-mono">
                                 </div>
-                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
-                                    Valider le retrait de caisse
-                                </button>
+                                <button type="submit" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs">Valider</button>
                             </form>
                         </div>
                     </div>
-
                     <div class="md:col-span-2 space-y-6">
-                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center gap-2">
                             <div>
                                 <h3 class="text-lg font-bold text-slate-800">Caisse & Commandes</h3>
-                                <p class="text-xs text-slate-500">Gérez plusieurs tables ou clients simultanément.</p>
+                                <p class="text-xs text-slate-500">Multi-clients</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <input type="text" id="new-client-name" placeholder="Nom Client / Table" class="px-3 py-2 border rounded-xl text-xs font-semibold w-36">
-                                <button onclick="addNewClientSession()" class="bg-primary hover:bg-blue-900 text-white px-3 py-2 rounded-xl text-xs font-bold transition">
-                                    <i class="fa-solid fa-user-plus mr-1"></i> Ouvrir client
-                                </button>
+                                <input type="text" id="new-client-name" placeholder="Nom Client" class="px-3 py-2 border rounded-xl text-xs font-semibold w-36">
+                                <button onclick="addNewClientSession()" class="bg-primary text-white px-3 py-2 rounded-xl text-xs font-bold">Ouvrir client</button>
                             </div>
                         </div>
-
                         <div id="clients-tabs" class="flex flex-wrap gap-2 pb-2"></div>
-
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                                <h4 class="font-bold text-slate-800 text-xs uppercase"><i class="fa-solid fa-boxes-stacked mr-1 text-primary"></i> Catalogue</h4>
+                                <h4 class="font-bold text-slate-800 text-xs uppercase">Catalogue</h4>
                                 <div id="pos-products-grid" class="space-y-2 max-h-60 overflow-y-auto">
-                                    <p class="text-xs text-slate-400">Ouvrez ou sélectionnez un client.</p>
+                                    <p class="text-xs text-slate-400">Sélectionnez un client.</p>
                                 </div>
                             </div>
-
                             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3 flex flex-col justify-between">
                                 <div>
                                     <div class="flex justify-between items-center mb-2">
-                                        <h4 id="active-cart-title" class="font-bold text-slate-800 text-xs uppercase">Panier en cours</h4>
+                                        <h4 id="active-cart-title" class="font-bold text-slate-800 text-xs uppercase">Panier</h4>
                                         <span id="active-client-badge" class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-bold text-[10px]">Aucun</span>
                                     </div>
                                     <div id="cart-items" class="space-y-1 max-h-40 overflow-y-auto text-xs divide-y divide-slate-100">
                                         <p class="text-slate-400 text-center py-2">Panier vide</p>
                                     </div>
                                 </div>
-
                                 <div class="border-t pt-3 space-y-2">
-                                    <div>
-                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Tél. Reçu (WhatsApp/SMS)</label>
-                                        <input type="tel" id="client-phone" placeholder="+241 07..." class="w-full px-2 py-1.5 border rounded-lg text-xs">
-                                    </div>
-                                    <div>
-                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Mode de paiement</label>
-                                        <select id="payment-method" class="w-full px-2 py-1.5 border rounded-lg text-xs font-semibold">
-                                            <option value="Espèces">Espèces (Cash)</option>
-                                            <option value="Airtel Money">Airtel Money</option>
-                                            <option value="Moov Money">Moov Money</option>
-                                        </select>
-                                    </div>
+                                    <input type="tel" id="client-phone" placeholder="Tél. Reçu WhatsApp" class="w-full px-2 py-1.5 border rounded-lg text-xs">
+                                    <select id="payment-method" class="w-full px-2 py-1.5 border rounded-lg text-xs font-semibold">
+                                        <option value="Espèces">Espèces (Cash)</option>
+                                        <option value="Airtel Money">Airtel Money</option>
+                                        <option value="Moov Money">Moov Money</option>
+                                    </select>
                                     <div class="flex justify-between items-center font-bold text-sm">
                                         <span>Total :</span>
                                         <span id="cart-total" class="text-success font-mono">0 FCFA</span>
@@ -325,70 +340,39 @@
             <!-- STOCK -->
             <section id="tab-stock" class="hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl">
-                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-plus-circle text-primary"></i> Ajouter ou Réapprovisionner un article
-                    </h4>
+                    <h4 class="font-bold text-slate-800 mb-4">Ajouter ou Réapprovisionner</h4>
                     <form id="add-product-form" onsubmit="handleAddProduct(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'article</label>
-                            <input type="text" id="prod-name" required placeholder="Ex: Régab 65cl" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
-                            <p class="text-[11px] text-slate-500 mt-1">Si l'article existe déjà, la quantité s'ajoutera au stock initial.</p>
+                        <input type="text" id="prod-name" required placeholder="Nom article" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                        <div class="grid grid-cols-3 gap-3">
+                            <input type="number" id="prod-price" required placeholder="Prix" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
+                            <input type="number" id="prod-qty" required placeholder="Qté" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
+                            <input type="number" id="prod-alert" required value="5" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prix (FCFA)</label>
-                                <input type="number" id="prod-price" required placeholder="1000" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Quantité à ajouter</label>
-                                <input type="number" id="prod-qty" required placeholder="50" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Seuil d'alerte</label>
-                                <input type="number" id="prod-alert" required value="5" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition text-sm shadow-md">
-                            Enregistrer l'article
-                        </button>
+                        <button type="submit" class="w-full bg-primary text-white font-bold py-3 rounded-xl text-sm">Enregistrer</button>
                     </form>
                 </div>
-
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-6 border-b border-slate-200">
-                        <h4 class="font-bold text-slate-800"><i class="fa-solid fa-boxes-stacked mr-2 text-primary"></i> Inventaire actuel</h4>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
-                                <tr>
-                                    <th class="p-4">Article</th>
-                                    <th class="p-4">Prix Unitaire</th>
-                                    <th class="p-4">Stock Restant</th>
-                                    <th class="p-4">Statut / Alerte</th>
-                                    <th class="p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inventory-table-body" class="divide-y divide-slate-200 text-sm">
-                                <tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                            <tr><th class="p-4">Article</th><th class="p-4">Prix</th><th class="p-4">Stock</th><th class="p-4">Statut</th><th class="p-4 text-right">Actions</th></tr>
+                        </thead>
+                        <tbody id="inventory-table-body" class="divide-y divide-slate-200 text-sm">
+                            <tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
             <!-- ABONNEMENT -->
             <section id="tab-subscription" class="hidden space-y-4">
-                <h3 class="text-2xl font-bold text-slate-800">État de votre Abonnement Gabstock</h3>
+                <h3 class="text-2xl font-bold text-slate-800">État de votre Abonnement</h3>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-lg space-y-4">
                     <p class="text-sm">Statut : <span id="sub-badge" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs">Actif</span></p>
                     <p class="text-sm text-slate-600">Prochaine échéance (10 000 FCFA) : <strong id="sub-due" class="font-mono">-</strong></p>
-                    <div id="sub-renewal-status" class="p-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                        Votre abonnement est à jour.
-                    </div>
+                    <div id="sub-renewal-status" class="p-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800">À jour</div>
                     <div class="bg-amber-50 p-4 rounded-xl text-xs space-y-2 border border-amber-200">
                         <p class="font-bold text-amber-900">Renouvellement mensuel :</p>
-                        <p>Transférez sur Airtel Money (<strong>074 25 34 44</strong>) ou Moov Money (<strong>062 90 66 77</strong>) puis contactez le support WhatsApp.</p>
+                        <p>Transférez sur Airtel Money (<strong>074 25 34 44</strong>) ou Moov Money (<strong>062 90 66 77</strong>) puis contactez le support.</p>
                     </div>
                 </div>
             </section>
