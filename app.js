@@ -88,8 +88,9 @@ async function handleRegistration(event) {
     registeredEstablishmentId = est.id;
     localStorage.setItem('gabstock_est_id', est.id);
 
+    // Enregistrement des frais d'activation mis à 20 000 FCFA
     await supabaseClient.from('saas_payments').insert([{
-        establishment_id: est.id, amount: 50000, payment_type: 'setup_fee', reference_number: `${provider} - ${paymentRef}`
+        establishment_id: est.id, amount: 20000, payment_type: 'setup_fee', reference_number: `${provider} - ${paymentRef}`
     }]);
 
     document.getElementById('auth-screen').classList.add('hidden');
@@ -316,7 +317,6 @@ function updateCartUI() {
     totalEl.innerText = total.toLocaleString() + " FCFA";
 }
 
-// ENCAISSEMENT & IMPRESSION EXCLUSIVE DE LA FACTURE CLIENT
 async function checkoutSale(actionType) {
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) { alert("Panier vide."); return; }
@@ -337,7 +337,6 @@ async function checkoutSale(actionType) {
         }).eq('id', item.id);
     }
 
-    // Préparation du reçu masqué pour impression propre
     document.getElementById('receipt-est-name').innerText = currentEstablishmentName.toUpperCase();
     document.getElementById('receipt-date').innerText = new Date().toLocaleString();
     document.getElementById('receipt-client-name').innerText = session.name;
@@ -366,7 +365,6 @@ async function checkoutSale(actionType) {
         alert("Vente encaissée et facture envoyée sur WhatsApp !");
     } else {
         alert("Vente encaissée avec succès !");
-        // Déclenche l'impression ciblée uniquement sur le ticket
         window.print();
     }
 
