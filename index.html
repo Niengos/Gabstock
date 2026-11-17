@@ -273,4 +273,113 @@
                                     <div class="flex justify-between items-center mb-2">
                                         <h4 id="active-cart-title" class="font-bold text-slate-800 text-xs uppercase">Panier en cours</h4>
                                         <span id="active-client-badge" class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-bold text-[10px]">Aucun</span>
-                        
+                                    </div>
+                                    <div id="cart-items" class="space-y-1 max-h-40 overflow-y-auto text-xs divide-y divide-slate-100">
+                                        <p class="text-slate-400 text-center py-2">Panier vide</p>
+                                    </div>
+                                </div>
+
+                                <div class="border-t pt-3 space-y-2">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Tél. Reçu (WhatsApp/SMS)</label>
+                                        <input type="tel" id="client-phone" placeholder="+241 07..." class="w-full px-2 py-1.5 border rounded-lg text-xs">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Mode de paiement</label>
+                                        <select id="payment-method" class="w-full px-2 py-1.5 border rounded-lg text-xs font-semibold">
+                                            <option value="Espèces">Espèces (Cash)</option>
+                                            <option value="Airtel Money">Airtel Money</option>
+                                            <option value="Moov Money">Moov Money</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex justify-between items-center font-bold text-sm">
+                                        <span>Total :</span>
+                                        <span id="cart-total" class="text-success font-mono">0 FCFA</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button onclick="checkoutSale('print')" class="bg-primary text-white font-bold py-2 rounded-lg text-xs">Imprimer</button>
+                                        <button onclick="checkoutSale('whatsapp')" class="bg-emerald-600 text-white font-bold py-2 rounded-lg text-xs">WhatsApp</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STOCK & GESTION DES ARTICLES FIXÉS -->
+            <section id="tab-stock" class="hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl">
+                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-plus-circle text-primary"></i> Ajouter ou Réapprovisionner un article
+                    </h4>
+                    <form id="add-product-form" onsubmit="handleAddProduct(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'article</label>
+                            <input type="text" id="prod-name" required placeholder="Ex: Régab 65cl" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                            <p class="text-[11px] text-slate-500 mt-1">Si l'article existe déjà, la quantité saisie s'ajoutera automatiquement au stock initial existant.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prix Unitaire (FCFA)</label>
+                                <input type="number" id="prod-price" required placeholder="1000" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Quantité à ajouter</label>
+                                <input type="number" id="prod-qty" required placeholder="50" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Seuil d'alerte</label>
+                                <input type="number" id="prod-alert" required value="5" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition text-sm shadow-md">
+                            Enregistrer / Réapprovisionner l'article
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200">
+                        <h4 class="font-bold text-slate-800"><i class="fa-solid fa-boxes-stacked mr-2 text-primary"></i> Inventaire actuel</h4>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                                <tr>
+                                    <th class="p-4">Article</th>
+                                    <th class="p-4">Prix Unitaire</th>
+                                    <th class="p-4">Stock Restant</th>
+                                    <th class="p-4">Statut / Alerte</th>
+                                    <th class="p-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table-body" class="divide-y divide-slate-200 text-sm">
+                                <tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABONNEMENT (AVEC ALERTE 7 JOURS) -->
+            <section id="tab-subscription" class="hidden space-y-4">
+                <h3 class="text-2xl font-bold text-slate-800">État de votre Abonnement Gabstock</h3>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-lg space-y-4">
+                    <p class="text-sm">Statut : <span id="sub-badge" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs">Actif</span></p>
+                    <p class="text-sm text-slate-600">Prochaine échéance (10 000 FCFA) : <strong id="sub-due" class="font-mono">-</strong></p>
+                    <div id="sub-renewal-status" class="p-3 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Votre abonnement est à jour.
+                    </div>
+                    <div class="bg-amber-50 p-4 rounded-xl text-xs space-y-2 border border-amber-200">
+                        <p class="font-bold text-amber-900">Renouvellement mensuel :</p>
+                        <p>Transférez sur Airtel Money (<strong>074 25 34 44</strong>) ou Moov Money (<strong>062 90 66 77</strong>) puis contactez le support WhatsApp.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
