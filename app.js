@@ -9,20 +9,65 @@ let activeClientId = null;
 window.addEventListener('DOMContentLoaded', () => {
     if (registeredEstablishmentId) {
         checkAccountStatus();
+    } else {
+        showLoginScreen();
     }
 });
 
+function showLoginScreen() {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('auth-screen').classList.add('hidden');
+    document.getElementById('pending-screen').classList.add('hidden');
+    document.getElementById('app-container').classList.add('hidden');
+}
+
+function showRegisterScreen() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('auth-screen').classList.remove('hidden');
+}
+
+function logoutToLogin() {
+    localStorage.removeItem('gabstock_est_id');
+    registeredEstablishmentId = null;
+    showLoginScreen();
+}
+
+// CONNEXION PAR MOT DE PASSE
+async function handleLogin(event) {
+    event.preventDefault();
+    const identity = document.getElementById('login-identity').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+
+    const { data, error } = await supabaseClient
+        .from('establishments')
+        .select('*')
+        .or(`name.ilike.%${identity}%,phone.eq.${identity}`)
+        .eq('password', password)
+        .single();
+
+    if (error || !data) {
+        alert("Nom d'établissement ou mot de passe incorrect.");
+        return;
+    }
+
+    registeredEstablishmentId = data.id;
+    localStorage.setItem('gabstock_est_id', data.id);
+    checkAccountStatus();
+}
+
+// INSCRIPTION AVEC MOT DE PASSE
 async function handleRegistration(event) {
     event.preventDefault();
     const name = document.getElementById('est-name').value;
     const phone = document.getElementById('est-phone').value;
+    const password = document.getElementById('est-password').value;
     const activityType = document.querySelector('input[name="activity_type"]:checked').value;
     const provider = document.getElementById('payment-provider').value;
     const paymentRef = document.getElementById('payment-ref').value;
 
     const { data, error } = await supabaseClient
         .from('establishments')
-        .insert([{ name, activity_type: activityType, phone, setup_fee_paid: false, subscription_status: 'pending' }])
+        .insert([{ name, phone, password, activity_type: activityType, setup_fee_paid: false, subscription_status: 'pending' }])
         .select();
 
     if (error) { alert("Erreur : " + error.message); return; }
@@ -43,14 +88,12 @@ async function checkAccountStatus() {
     const { data, error } = await supabaseClient.from('establishments').select('*').eq('id', registeredEstablishmentId).single();
 
     if (error || !data) {
-        localStorage.removeItem('gabstock_est_id');
-        registeredEstablishmentId = null;
-        alert("Compte réinitialisé ou supprimé.");
-        location.reload();
+        logoutToLogin();
         return;
     }
 
     if (data.subscription_status === 'active') {
+        document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('pending-screen').classList.add('hidden');
         document.getElementById('app-container').classList.remove('hidden');
@@ -62,21 +105,16 @@ async function checkAccountStatus() {
         if (data.next_due_date) {
             const dueDate = new Date(data.next_due_date);
             document.getElementById('sub-due').innerText = dueDate.toLocaleDateString();
-            
             const diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
             if (diffDays <= 7 && diffDays >= 0) {
                 document.getElementById('sub-warning-banner').classList.remove('hidden');
-                document.getElementById('sub-renewal-status').className = "p-3 rounded-xl text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300";
-                document.getElementById('sub-renewal-status').innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Attention : Votre abonnement expire dans ${diffDays} jour(s) !`;
-            } else if (diffDays < 0) {
-                document.getElementById('sub-renewal-status').className = "p-3 rounded-xl text-xs font-semibold bg-rose-100 text-rose-900 border border-rose-300";
-                document.getElementById('sub-renewal-status').innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-1"></i> Votre abonnement est expiré !`;
             }
         }
 
         loadProducts();
         loadDashboardStats();
     } else {
+        document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('auth-screen').classList.add('hidden');
         document.getElementById('pending-screen').classList.remove('hidden');
     }
@@ -95,7 +133,6 @@ function switchTab(tabId, event) {
 function openTodayDetailsModal() { document.getElementById('today-details-modal').classList.remove('hidden'); }
 function closeTodayDetailsModal() { document.getElementById('today-details-modal').classList.add('hidden'); }
 
-// AJOUT OU RÉAPPROVISIONNEMENT DE STOCK
 async function handleAddProduct(event) {
     event.preventDefault();
     if (!registeredEstablishmentId) return;
@@ -106,37 +143,19 @@ async function handleAddProduct(event) {
     const alert_threshold = parseInt(document.getElementById('prod-alert').value);
 
     const { data: existingProducts } = await supabaseClient
-        .from('products')
-        .select('*')
-        .eq('establishment_id', registeredEstablishmentId)
-        .ilike('name', name);
+        .from('products').select('*').eq('establishment_id', registeredEstablishmentId).ilike('name', name);
 
     if (existingProducts && existingProducts.length > 0) {
         const existing = existingProducts[0];
         const newTotalQty = existing.stock_quantity + addedQty;
-
-        const { error } = await supabaseClient
-            .from('products')
-            .update({ stock_quantity: newTotalQty, price: price, unit_price: price, alert_threshold: alert_threshold })
-            .eq('id', existing.id);
-
-        if (error) alert("Erreur : " + error.message);
-        else {
-            alert(`Article mis à jour ! ${addedQty} unités ajoutées (Total : ${newTotalQty}).`);
-            document.getElementById('add-product-form').reset();
-            loadProducts();
-        }
+        await supabaseClient.from('products').update({ stock_quantity: newTotalQty, price, unit_price: price, alert_threshold }).eq('id', existing.id);
+        alert(`Article mis à jour ! Total : ${newTotalQty}`);
     } else {
-        const { error } = await supabaseClient.from('products').insert([{
-            establishment_id: registeredEstablishmentId, name, price, unit_price: price, stock_quantity: addedQty, alert_threshold
-        }]);
-
-        if (error) alert("Erreur : " + error.message);
-        else {
-            document.getElementById('add-product-form').reset();
-            loadProducts();
-        }
+        await supabaseClient.from('products').insert([{ establishment_id: registeredEstablishmentId, name, price, unit_price: price, stock_quantity: addedQty, alert_threshold }]);
+        alert("Article ajouté !");
     }
+    document.getElementById('add-product-form').reset();
+    loadProducts();
 }
 
 async function loadProducts() {
@@ -144,39 +163,26 @@ async function loadProducts() {
     const { data } = await supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId);
     const tbody = document.getElementById('inventory-table-body');
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Aucun article enregistré.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Aucun article.</td></tr>`;
         return;
     }
-
     tbody.innerHTML = '';
     data.forEach(prod => {
         const isAlert = prod.stock_quantity <= (prod.alert_threshold || 5);
-        const alertBadge = isAlert 
-            ? `<span class="px-2 py-1 bg-rose-100 text-rose-800 rounded-lg font-bold text-xs"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Stock Bas</span>`
-            : `<span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-bold text-xs">Normal</span>`;
-
+        const alertBadge = isAlert ? `<span class="px-2 py-1 bg-rose-100 text-rose-800 rounded-lg text-xs font-bold">Stock Bas</span>` : `<span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold">Normal</span>`;
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition";
-        tr.innerHTML = `
-            <td class="p-4 font-bold text-slate-800">${prod.name}</td>
-            <td class="p-4 font-mono text-slate-700">${prod.price.toLocaleString()} FCFA</td>
-            <td class="p-4 font-mono text-slate-700 font-semibold">${prod.stock_quantity} (Seuil: ${prod.alert_threshold || 5})</td>
-            <td class="p-4">${alertBadge}</td>
-            <td class="p-4 text-right">
-                <button onclick="deleteProduct('${prod.id}')" class="text-rose-600 p-2"><i class="fa-solid fa-trash"></i></button>
-            </td>
-        `;
+        tr.className = "hover:bg-slate-50";
+        tr.innerHTML = `<td class="p-4 font-bold">${prod.name}</td><td class="p-4 font-mono">${prod.price.toLocaleString()} F</td><td class="p-4 font-mono font-semibold">${prod.stock_quantity}</td><td class="p-4">${alertBadge}</td><td class="p-4 text-right"><button onclick="deleteProduct('${prod.id}')" class="text-rose-600"><i class="fa-solid fa-trash"></i></button></td>`;
         tbody.appendChild(tr);
     });
 }
 
 async function deleteProduct(prodId) {
-    if (!confirm("Supprimer cet article ?")) return;
+    if (!confirm("Supprimer ?")) return;
     await supabaseClient.from('products').delete().eq('id', prodId);
     loadProducts();
 }
 
-// CAISSE & MULTI-CLIENTS
 function addNewClientSession() {
     const input = document.getElementById('new-client-name');
     const clientName = input.value.trim() || `Client ${clientSessions.length + 1}`;
@@ -190,21 +196,16 @@ function addNewClientSession() {
 
 function renderClientTabs() {
     const container = document.getElementById('clients-tabs');
-    if (clientSessions.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400">Aucun client ouvert.</p>`;
-        return;
-    }
-
+    if (clientSessions.length === 0) { container.innerHTML = `<p class="text-xs text-slate-400">Aucun client ouvert.</p>`; return; }
     container.innerHTML = '';
     clientSessions.forEach(session => {
         const isActive = session.id === activeClientId;
         const btn = document.createElement('button');
-        btn.className = `px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${isActive ? 'bg-primary text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
+        btn.className = `px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 ${isActive ? 'bg-primary text-white shadow-md' : 'bg-slate-100 text-slate-700'}`;
         btn.innerHTML = `<i class="fa-solid fa-user"></i> ${session.name} (${session.cart.length})`;
         btn.onclick = () => { activeClientId = session.id; renderClientTabs(); updateCartUI(); };
         container.appendChild(btn);
     });
-
     if (!activeClientId && clientSessions.length > 0) activeClientId = clientSessions[0].id;
     updateCartUI();
 }
@@ -213,40 +214,26 @@ function loadPOSProducts() {
     if (!registeredEstablishmentId) return;
     supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId).then(({ data }) => {
         const grid = document.getElementById('pos-products-grid');
-        if (!data || data.length === 0) {
-            grid.innerHTML = `<p class="text-xs text-slate-400">Aucun produit en stock.</p>`;
-            return;
-        }
-
+        if (!data || data.length === 0) { grid.innerHTML = `<p class="text-xs text-slate-400">Aucun produit.</p>`; return; }
         grid.innerHTML = '';
         data.forEach(prod => {
             const div = document.createElement('div');
             div.className = "p-3 rounded-xl border border-slate-200 hover:border-primary transition flex justify-between items-center bg-slate-50 text-xs";
-            div.innerHTML = `
-                <div>
-                    <span class="font-bold text-slate-800 block">${prod.name}</span>
-                    <span class="text-slate-500 font-mono">${prod.price.toLocaleString()} F | Stock: ${prod.stock_quantity}</span>
-                </div>
-                <button onclick='addToActiveCart(${JSON.stringify(prod)})' class="bg-primary text-white px-2.5 py-1.5 rounded-lg font-bold hover:bg-blue-900">
-                    <i class="fa-solid fa-plus"></i>
-                </button>
-            `;
+            div.innerHTML = `<div><span class="font-bold block">${prod.name}</span><span class="text-slate-500 font-mono">${prod.price.toLocaleString()} F | Stock: ${prod.stock_quantity}</span></div><button onclick='addToActiveCart(${JSON.stringify(prod)})' class="bg-primary text-white px-2.5 py-1.5 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>`;
             grid.appendChild(div);
         });
     });
 }
 
 function addToActiveCart(product) {
-    if (!activeClientId) { alert("Veuillez d'abord ouvrir un client."); return; }
+    if (!activeClientId) { alert("Ouvrez un client."); return; }
     const session = clientSessions.find(s => s.id === activeClientId);
-    if (!session) return;
-
     const existing = session.cart.find(item => item.id === product.id);
     if (existing) {
         if (existing.quantity < product.stock_quantity) existing.quantity++;
         else { alert("Stock insuffisant !"); return; }
     } else {
-        if (product.stock_quantity <= 0) { alert("Rupture de stock !"); return; }
+        if (product.stock_quantity <= 0) { alert("Rupture !"); return; }
         session.cart.push({ ...product, quantity: 1 });
     }
     updateCartUI();
@@ -257,7 +244,6 @@ function updateCartUI() {
     const container = document.getElementById('cart-items');
     const totalEl = document.getElementById('cart-total');
     const badgeEl = document.getElementById('active-client-badge');
-    
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) {
         container.innerHTML = `<p class="text-slate-400 text-center py-2 text-xs">Panier vide</p>`;
@@ -265,26 +251,15 @@ function updateCartUI() {
         if (badgeEl) badgeEl.innerText = session ? session.name : "Aucun";
         return;
     }
-
     badgeEl.innerText = session.name;
     container.innerHTML = '';
     let total = 0;
-
     session.cart.forEach((item, idx) => {
         const subtotal = item.price * item.quantity;
         total += subtotal;
         const row = document.createElement('div');
         row.className = "py-1.5 flex justify-between items-center text-xs";
-        row.innerHTML = `
-            <div>
-                <span class="font-bold text-slate-800">${item.name}</span>
-                <span class="text-slate-500 text-[10px] block">${item.quantity} x ${item.price.toLocaleString()}</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="font-mono font-semibold">${subtotal.toLocaleString()}</span>
-                <button onclick="session.cart.splice(${idx}, 1); updateCartUI(); renderClientTabs();" class="text-rose-500"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        `;
+        row.innerHTML = `<div><span class="font-bold">${item.name}</span><span class="text-slate-500 text-[10px] block">${item.quantity} x ${item.price.toLocaleString()}</span></div><div class="flex items-center gap-2"><span class="font-mono font-semibold">${subtotal.toLocaleString()}</span><button onclick="session.cart.splice(${idx}, 1); updateCartUI(); renderClientTabs();" class="text-rose-500"><i class="fa-solid fa-trash"></i></button></div>`;
         container.appendChild(row);
     });
     totalEl.innerText = total.toLocaleString() + " FCFA";
@@ -293,38 +268,15 @@ function updateCartUI() {
 async function checkoutSale(actionType) {
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) { alert("Panier vide."); return; }
-
     const paymentMethod = document.getElementById('payment-method').value;
     const clientPhone = document.getElementById('client-phone').value.trim();
     const totalAmount = session.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    const { error } = await supabaseClient.from('orders').insert([{
-        establishment_id: registeredEstablishmentId,
-        table_or_client: session.name,
-        total_amount: totalAmount,
-        payment_method: paymentMethod
-    }]);
-
-    if (error) { alert("Erreur : " + error.message); return; }
-
+    await supabaseClient.from('orders').insert([{ establishment_id: registeredEstablishmentId, table_or_client: session.name, total_amount: totalAmount, payment_method: paymentMethod }]);
     for (const item of session.cart) {
-        await supabaseClient.from('products')
-            .update({ stock_quantity: item.stock_quantity - item.quantity })
-            .eq('id', item.id);
+        await supabaseClient.from('products').update({ stock_quantity: item.stock_quantity - item.quantity }).eq('id', item.id);
     }
-
-    alert(`Vente encaissée (${paymentMethod}) !`);
-
-    let receiptText = `*REÇU GABSTOCK*%0AClient: ${session.name}%0A-------------------%0A`;
-    session.cart.forEach(i => { receiptText += `- ${i.name} x${i.quantity} : ${(i.price*i.quantity).toLocaleString()} F%0A`; });
-    receiptText += `-------------------%0A*TOTAL : ${totalAmount.toLocaleString()} FCFA*%0AMode: ${paymentMethod}`;
-
-    if (actionType === 'whatsapp' && clientPhone) {
-        window.open(`https://wa.me/${clientPhone.replace(/[^0-9]/g, '')}?text=${receiptText}`, '_blank');
-    } else {
-        window.print();
-    }
-
+    alert("Vente encaissée !");
     clientSessions = clientSessions.filter(s => s.id !== activeClientId);
     activeClientId = clientSessions.length > 0 ? clientSessions[0].id : null;
     renderClientTabs();
@@ -336,43 +288,28 @@ async function checkoutSale(actionType) {
 async function handleCashWithdrawal(event) {
     event.preventDefault();
     if (!registeredEstablishmentId) return;
-
     const reason = document.getElementById('withdrawal-reason').value.trim();
     const amount = parseFloat(document.getElementById('withdrawal-amount').value);
-
-    const { error } = await supabaseClient.from('cash_withdrawals').insert([{
-        establishment_id: registeredEstablishmentId, amount, reason, source: 'Cash', responsible: 'Gérant'
-    }]);
-
-    if (error) alert("Erreur : " + error.message);
-    else {
-        alert("Retrait enregistré.");
-        document.getElementById('withdrawal-reason').value = '';
-        document.getElementById('withdrawal-amount').value = '';
-        loadCashboxSummary();
-    }
+    await supabaseClient.from('cash_withdrawals').insert([{ establishment_id: registeredEstablishmentId, amount, reason }]);
+    alert("Retrait enregistré.");
+    document.getElementById('withdrawal-reason').value = '';
+    document.getElementById('withdrawal-amount').value = '';
+    loadCashboxSummary();
 }
 
 async function loadCashboxSummary() {
     if (!registeredEstablishmentId) return;
     const { data: ords } = await supabaseClient.from('orders').select('*').eq('establishment_id', registeredEstablishmentId);
     const { data: withdrawals } = await supabaseClient.from('cash_withdrawals').select('*').eq('establishment_id', registeredEstablishmentId);
-
-    let totalIn = 0;
-    if (ords) ords.forEach(o => totalIn += Number(o.total_amount));
-
-    let totalOut = 0;
-    if (withdrawals) withdrawals.forEach(w => totalOut += Number(w.amount));
-
+    let totalIn = 0; if (ords) ords.forEach(o => totalIn += Number(o.total_amount));
+    let totalOut = 0; if (withdrawals) withdrawals.forEach(w => totalOut += Number(w.amount));
     document.getElementById('cashbox-total').innerText = totalIn.toLocaleString() + " FCFA";
     document.getElementById('cashbox-withdrawals').innerText = totalOut.toLocaleString() + " FCFA";
     document.getElementById('cashbox-balance').innerText = (totalIn - totalOut).toLocaleString() + " FCFA";
 }
 
-// TABLEAU DE BORD (VENTES DU JOUR ÉPURÉES ET GRAPHIQUE 7 JOURS)
 async function loadDashboardStats() {
     if (!registeredEstablishmentId) return;
-
     const { data: prods } = await supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId);
     const { data: ords } = await supabaseClient.from('orders').select('*').eq('establishment_id', registeredEstablishmentId);
 
@@ -387,51 +324,32 @@ async function loadDashboardStats() {
     todayBody.innerHTML = '';
     let todayOrdersCount = 0;
 
-    // Préparation pour le graphique des 7 derniers jours
     let dailyTotals = {};
     for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
+        const d = new Date(); d.setDate(d.getDate() - i);
         const dateKey = d.toISOString().split('T')[0];
-        const dayLabel = d.toLocaleDateString('fr-FR', { weekday: 'short' });
-        dailyTotals[dateKey] = { label: dayLabel, amount: 0 };
+        dailyTotals[dateKey] = { label: d.toLocaleDateString('fr-FR', { weekday: 'short' }), amount: 0 };
     }
 
     if (ords) {
         ords.forEach(o => {
             const amt = Number(o.total_amount);
             totalCA += amt;
-            if (o.payment_method === 'Espèces') totalCash += amt;
-            else totalMomo += amt;
-
+            if (o.payment_method === 'Espèces') totalCash += amt; else totalMomo += amt;
             const orderDate = o.created_at ? o.created_at.split('T')[0] : '';
-            
-            // Ventilation 7 derniers jours
-            if (dailyTotals[orderDate] !== undefined) {
-                dailyTotals[orderDate].amount += amt;
-            }
-
+            if (dailyTotals[orderDate] !== undefined) dailyTotals[orderDate].amount += amt;
             if (orderDate === todayStr) {
-                todayTotal += amt;
-                todayOrdersCount++;
+                todayTotal += amt; todayOrdersCount++;
                 const orderTime = new Date(o.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-3 font-mono">${orderTime}</td>
-                    <td class="p-3 font-bold text-slate-800">${o.table_or_client || 'Comptoir'}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-semibold">${o.payment_method || 'Espèces'}</span></td>
-                    <td class="p-3 text-right font-mono font-bold text-success">${amt.toLocaleString()} FCFA</td>
-                `;
+                tr.innerHTML = `<td class="p-3 font-mono">${orderTime}</td><td class="p-3 font-bold">${o.table_or_client || 'Comptoir'}</td><td class="p-3">${o.payment_method}</td><td class="p-3 text-right font-mono font-bold text-success">${amt.toLocaleString()} F</td>`;
                 todayBody.appendChild(tr);
             }
         });
     }
 
-    if (todayOrdersCount === 0) {
-        todayBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Aucune vente enregistrée aujourd'hui.</td></tr>`;
-    }
+    if (todayOrdersCount === 0) todayBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Aucune vente aujourd'hui.</td></tr>`;
 
     document.getElementById('stat-ca').innerText = totalCA.toLocaleString() + " FCFA";
     document.getElementById('stat-ca-cash').innerText = totalCash.toLocaleString() + " FCFA";
@@ -439,45 +357,30 @@ async function loadDashboardStats() {
     document.getElementById('stat-stock-val').innerText = stockVal.toLocaleString() + " FCFA";
     document.getElementById('stat-today-total').innerText = todayTotal.toLocaleString() + " FCFA";
 
-    // Rendu du Graphique 7 jours
     const barsContainer = document.getElementById('weekly-chart-bars');
     const labelsContainer = document.getElementById('weekly-chart-labels');
-    barsContainer.innerHTML = '';
-    labelsContainer.innerHTML = '';
-
+    barsContainer.innerHTML = ''; labelsContainer.innerHTML = '';
     const maxAmount = Math.max(...Object.values(dailyTotals).map(d => d.amount), 10000);
 
     Object.values(dailyTotals).forEach(day => {
         const heightPercent = Math.round((day.amount / maxAmount) * 100);
-        
         const barDiv = document.createElement('div');
-        barDiv.className = "w-full bg-blue-100 hover:bg-primary transition rounded-t-lg flex flex-col justify-end items-center group relative h-full";
-        barDiv.innerHTML = `
-            <div class="absolute -top-7 hidden group-hover:block bg-slate-900 text-white text-[9px] px-1.5 py-0.5 rounded font-mono whitespace-nowrap z-10">${day.amount.toLocaleString()} F</div>
-            <div class="w-full bg-primary rounded-t-lg transition-all" style="height: ${heightPercent}%"></div>
-        `;
+        barDiv.className = "w-full bg-blue-100 rounded-t-lg flex flex-col justify-end items-center group relative h-full";
+        barDiv.innerHTML = `<div class="absolute -top-7 hidden group-hover:block bg-slate-900 text-white text-[9px] px-1 py-0.5 rounded font-mono z-10">${day.amount.toLocaleString()} F</div><div class="w-full bg-primary rounded-t-lg" style="height: ${heightPercent}%"></div>`;
         barsContainer.appendChild(barDiv);
-
-        const labelDiv = document.createElement('div');
-        labelDiv.innerText = day.label;
-        labelsContainer.appendChild(labelDiv);
+        const labelDiv = document.createElement('div'); labelDiv.innerText = day.label; labelsContainer.appendChild(labelDiv);
     });
 
-    // Alertes stock
     const alertsContainer = document.getElementById('dashboard-alerts-list');
     alertsContainer.innerHTML = '';
     const alertProducts = prods ? prods.filter(p => p.stock_quantity <= (p.alert_threshold || 5)) : [];
-
     if (alertProducts.length === 0) {
-        alertsContainer.innerHTML = `<p class="text-sm text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> Tous les stocks sont à un niveau satisfaisant.</p>`;
+        alertsContainer.innerHTML = `<p class="text-sm text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> Stock normal.</p>`;
     } else {
         alertProducts.forEach(p => {
             const div = document.createElement('div');
             div.className = "flex justify-between items-center p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs";
-            div.innerHTML = `
-                <span class="font-bold text-rose-900"><i class="fa-solid fa-triangle-exclamation mr-2 text-rose-600"></i> ${p.name}</span>
-                <span class="bg-rose-600 text-white font-mono px-2.5 py-1 rounded-lg font-bold">Stock : ${p.stock_quantity} (Seuil : ${p.alert_threshold || 5})</span>
-            `;
+            div.innerHTML = `<span class="font-bold text-rose-900"><i class="fa-solid fa-triangle-exclamation mr-2"></i> ${p.name}</span><span class="bg-rose-600 text-white font-mono px-2 py-1 rounded-lg font-bold">Stock : ${p.stock_quantity}</span>`;
             alertsContainer.appendChild(div);
         });
     }
