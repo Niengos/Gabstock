@@ -143,7 +143,7 @@
 
         <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
             
-            <!-- TABLEAU DE BORD (AVEC VENTES DU JOUR) -->
+            <!-- TABLEAU DE BORD ÉPURÉ & GRAPHIQUE 7 JOURS -->
             <section id="tab-dashboard" class="space-y-6">
                 <!-- Bannière d'alerte d'abonnement (si < 7 jours) -->
                 <div id="sub-warning-banner" class="hidden bg-amber-500 text-slate-900 p-4 rounded-2xl font-bold flex justify-between items-center shadow-md">
@@ -153,18 +153,23 @@
 
                 <h3 class="text-2xl font-bold text-slate-800">Vue d'ensemble de l'activité</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-2 space-y-3">
+                    <!-- Ventes du jour épurées avec bouton vers le détail -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3 flex flex-col justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase">Ventes du Jour (<span id="today-date-label">-</span>)</p>
+                            <h4 id="stat-today-total" class="text-3xl font-extrabold text-success mt-2">0 FCFA</h4>
+                        </div>
+                        <button onclick="openTodayDetailsModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-list-ul"></i> Voir toutes les ventes du jour
+                        </button>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
                         <p class="text-xs text-slate-500 font-semibold uppercase">Chiffre d'Affaires Global</p>
-                        <h4 id="stat-ca" class="text-3xl font-extrabold text-primary">0 FCFA</h4>
-                        <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100 text-xs">
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-500 block font-semibold">Total Cash (Espèces)</span>
-                                <span id="stat-ca-cash" class="font-mono text-base font-bold text-success">0 FCFA</span>
-                            </div>
-                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-500 block font-semibold">Total Mobile Money</span>
-                                <span id="stat-ca-momo" class="font-mono text-base font-bold text-amber-600">0 FCFA</span>
-                            </div>
+                        <h4 id="stat-ca" class="text-2xl font-extrabold text-primary">0 FCFA</h4>
+                        <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-[11px]">
+                            <div><span class="text-slate-500">Cash:</span> <strong id="stat-ca-cash" class="font-mono text-success">0 F</strong></div>
+                            <div><span class="text-slate-500">MoMo:</span> <strong id="stat-ca-momo" class="font-mono text-amber-600">0 F</strong></div>
                         </div>
                     </div>
 
@@ -174,28 +179,16 @@
                     </div>
                 </div>
 
-                <!-- Section Ventes du Jour -->
+                <!-- GRAPHIQUE DES 7 DERNIERS JOURS -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-calendar-day text-primary"></i> Ventes du Jour (<span id="today-date-label">-</span>)
-                        </h4>
-                        <span id="stat-today-total" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold text-sm">0 FCFA</span>
+                    <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-primary"></i> Évolution du Chiffre d'Affaires (7 derniers jours)
+                    </h4>
+                    <div class="grid grid-cols-7 gap-2 items-end h-40 pt-6 border-b border-slate-200 px-2" id="weekly-chart-bars">
+                        <!-- Les barres du graphique seront injectées ici -->
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
-                                <tr>
-                                    <th class="p-3">Heure</th>
-                                    <th class="p-3">Client / Table</th>
-                                    <th class="p-3">Mode de Paiement</th>
-                                    <th class="p-3 text-right">Montant</th>
-                                </tr>
-                            </thead>
-                            <tbody id="today-orders-body" class="divide-y divide-slate-200 text-xs">
-                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Aucune vente enregistrée aujourd'hui.</td></tr>
-                            </tbody>
-                        </table>
+                    <div class="grid grid-cols-7 gap-2 text-center text-[10px] font-bold text-slate-500 uppercase" id="weekly-chart-labels">
+                        <!-- Les jours de la semaine seront injectés ici -->
                     </div>
                 </div>
 
@@ -210,10 +203,34 @@
                 </div>
             </section>
 
+            <!-- MODALE / SECTION DÉTAIL DES VENTES DU JOUR -->
+            <div id="today-details-modal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-6 space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <h3 class="font-bold text-lg text-slate-800"><i class="fa-solid fa-list-ul mr-2 text-primary"></i> Détail des ventes du jour</h3>
+                        <button onclick="closeTodayDetailsModal()" class="text-slate-400 hover:text-slate-700 font-bold text-lg"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="max-h-80 overflow-y-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3">Heure</th>
+                                    <th class="p-3">Client / Table</th>
+                                    <th class="p-3">Paiement</th>
+                                    <th class="p-3 text-right">Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody id="today-orders-body" class="divide-y divide-slate-200 text-xs">
+                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Aucune vente.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- CAISSE, ENCAISSEMENT & RETRAITS DE CAISSE -->
             <section id="tab-pos" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Colonne gauche : Gestion de caisse & Retraits -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
                         <div>
                             <h4 class="font-bold text-slate-800 mb-2"><i class="fa-solid fa-wallet mr-2 text-primary"></i> Trésorerie de Caisse</h4>
@@ -224,7 +241,6 @@
                             </div>
                         </div>
 
-                        <!-- Formulaire de retrait -->
                         <div class="border-t pt-4 space-y-3">
                             <h5 class="font-bold text-xs text-slate-700 uppercase"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> Effectuer un retrait de caisse</h5>
                             <form onsubmit="handleCashWithdrawal(event)" class="space-y-3">
@@ -243,7 +259,6 @@
                         </div>
                     </div>
 
-                    <!-- Colonne centrale & droite : Catalogue & Panier Multi-clients -->
                     <div class="md:col-span-2 space-y-6">
                         <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2">
                             <div>
@@ -307,7 +322,7 @@
                 </div>
             </section>
 
-            <!-- STOCK & GESTION DES ARTICLES FIXÉS -->
+            <!-- STOCK -->
             <section id="tab-stock" class="hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl">
                     <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -317,11 +332,11 @@
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'article</label>
                             <input type="text" id="prod-name" required placeholder="Ex: Régab 65cl" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
-                            <p class="text-[11px] text-slate-500 mt-1">Si l'article existe déjà, la quantité saisie s'ajoutera automatiquement au stock initial existant.</p>
+                            <p class="text-[11px] text-slate-500 mt-1">Si l'article existe déjà, la quantité s'ajoutera au stock initial.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prix Unitaire (FCFA)</label>
+                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prix (FCFA)</label>
                                 <input type="number" id="prod-price" required placeholder="1000" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
                             </div>
                             <div>
@@ -334,7 +349,7 @@
                             </div>
                         </div>
                         <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition text-sm shadow-md">
-                            Enregistrer / Réapprovisionner l'article
+                            Enregistrer l'article
                         </button>
                     </form>
                 </div>
@@ -362,7 +377,7 @@
                 </div>
             </section>
 
-            <!-- ABONNEMENT (AVEC ALERTE 7 JOURS) -->
+            <!-- ABONNEMENT -->
             <section id="tab-subscription" class="hidden space-y-4">
                 <h3 class="text-2xl font-bold text-slate-800">État de votre Abonnement Gabstock</h3>
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-lg space-y-4">
