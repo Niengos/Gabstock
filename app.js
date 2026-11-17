@@ -5,6 +5,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let registeredEstablishmentId = localStorage.getItem('gabstock_est_id') || null;
 let clientSessions = [];
 let activeClientId = null;
+let cachedProducts = []; // Pour la recherche instantanée
 
 window.addEventListener('DOMContentLoaded', () => {
     if (registeredEstablishmentId) {
@@ -13,6 +14,19 @@ window.addEventListener('DOMContentLoaded', () => {
         showLoginScreen();
     }
 });
+
+// Fonction pour afficher / masquer le mot de passe (Œil)
+function togglePassword(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+    }
+}
 
 function showLoginScreen() {
     document.getElementById('login-screen').classList.remove('hidden');
@@ -32,7 +46,6 @@ function logoutToLogin() {
     showLoginScreen();
 }
 
-// CONNEXION PAR MOT DE PASSE
 async function handleLogin(event) {
     event.preventDefault();
     const identity = document.getElementById('login-identity').value.trim();
@@ -55,7 +68,6 @@ async function handleLogin(event) {
     checkAccountStatus();
 }
 
-// INSCRIPTION AVEC MOT DE PASSE
 async function handleRegistration(event) {
     event.preventDefault();
     const name = document.getElementById('est-name').value;
@@ -210,30 +222,44 @@ function renderClientTabs() {
     updateCartUI();
 }
 
-function loadPOSProducts() {
+// CHARGEMENT ET RECHERCHE DANS LE CATALOGUE POS
+async function loadPOSProducts() {
     if (!registeredEstablishmentId) return;
-    supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId).then(({ data }) => {
-        const grid = document.getElementById('pos-products-grid');
-        if (!data || data.length === 0) { grid.innerHTML = `<p class="text-xs text-slate-400">Aucun produit.</p>`; return; }
-        grid.innerHTML = '';
-        data.forEach(prod => {
-            const div = document.createElement('div');
-            div.className = "p-3 rounded-xl border border-slate-200 hover:border-primary transition flex justify-between items-center bg-slate-50 text-xs";
-            div.innerHTML = `<div><span class="font-bold block">${prod.name}</span><span class="text-slate-500 font-mono">${prod.price.toLocaleString()} F | Stock: ${prod.stock_quantity}</span></div><button onclick='addToActiveCart(${JSON.stringify(prod)})' class="bg-primary text-white px-2.5 py-1.5 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>`;
-            grid.appendChild(div);
-        });
+    const { data } = await supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId);
+    cachedProducts = data || [];
+    renderPOSGrid(cachedProducts);
+}
+
+function filterPOSProducts() {
+    const query = document.getElementById('pos-search').value.toLowerCase();
+    const filtered = cachedProducts.filter(p => p.name.toLowerCase().includes(query));
+    renderPOSGrid(filtered);
+}
+
+function renderPOSGrid(productsList) {
+    const grid = document.getElementById('pos-products-grid');
+    if (!productsList || productsList.length === 0) {
+        grid.innerHTML = `<p class="text-xs text-slate-400">Aucun produit trouvé.</p>`;
+        return;
+    }
+    grid.innerHTML = '';
+    productsList.forEach(prod => {
+        const div = document.createElement('div');
+        div.className = "p-3 rounded-xl border border-slate-200 hover:border-primary transition flex justify-between items-center bg-slate-50 text-xs";
+        div.innerHTML = `<div><span class="font-bold block">${prod.name}</span><span class="text-slate-500 font-mono">${prod.price.toLocaleString()} F | Stock: ${prod.stock_quantity}</span></div><button onclick='addToActiveCart(${JSON.stringify(prod)})' class="bg-primary text-white px-2.5 py-1.5 rounded-lg font-bold"><i class="fa-solid fa-plus"></i></button>`;
+        grid.appendChild(div);
     });
 }
 
 function addToActiveCart(product) {
-    if (!activeClientId) { alert("Ouvrez un client."); return; }
+    if (!activeClientId) { alert("Ouvrez ou sélectionnez un client en haut."); return; }
     const session = clientSessions.find(s => s.id === activeClientId);
     const existing = session.cart.find(item => item.id === product.id);
     if (existing) {
         if (existing.quantity < product.stock_quantity) existing.quantity++;
         else { alert("Stock insuffisant !"); return; }
     } else {
-        if (product.stock_quantity <= 0) { alert("Rupture !"); return; }
+        if (product.stock_quantity <= 0) { alert("Rupture de stock !"); return; }
         session.cart.push({ ...product, quantity: 1 });
     }
     updateCartUI();
@@ -265,6 +291,7 @@ function updateCartUI() {
     totalEl.innerText = total.toLocaleString() + " FCFA";
 }
 
+// ENCAISSEMENT & FIX WHATSAPP / IMPRESSION
 async function checkoutSale(actionType) {
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) { alert("Panier vide."); return; }
@@ -276,13 +303,28 @@ async function checkoutSale(actionType) {
     for (const item of session.cart) {
         await supabaseClient.from('products').update({ stock_quantity: item.stock_quantity - item.quantity }).eq('id', item.id);
     }
-    alert("Vente encaissée !");
+    alert("Vente encaissée avec succès !");
+
+    // Construction propre du reçu encodé pour WhatsApp
+    let receiptText = `*REÇU GABSTOCK*\nClient: ${session.name}\n-------------------\n`;
+    session.cart.forEach(i => { receiptText += `- ${i.name} x${i.quantity} : ${(i.price*i.quantity).toLocaleString()} F\n`; });
+    receiptText += `-------------------\n*TOTAL : ${totalAmount.toLocaleString()} FCFA*\nMode: ${paymentMethod}\nMerci de votre visite !`;
+
+    if (actionType === 'whatsapp' && clientPhone) {
+        const cleanPhone = clientPhone.replace(/[^0-9]/g, '');
+        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(receiptText)}`;
+        window.open(waUrl, '_blank');
+    } else {
+        window.print();
+    }
+
     clientSessions = clientSessions.filter(s => s.id !== activeClientId);
     activeClientId = clientSessions.length > 0 ? clientSessions[0].id : null;
     renderClientTabs();
     loadDashboardStats();
     loadCashboxSummary();
     loadProducts();
+    loadPOSProducts();
 }
 
 async function handleCashWithdrawal(event) {
