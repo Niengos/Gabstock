@@ -22,7 +22,6 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- CSS STRICTEMENT DÉDIÉ À L'impression DU REÇU -->
     <style>
         #print-receipt-section { display: none; }
         
@@ -39,7 +38,7 @@
                 left: 0 !important;
                 top: 0 !important;
                 width: 100% !important;
-                max-width: 80mm; /* Format idéal ticket thermique */
+                max-width: 80mm;
                 margin: 0 auto;
                 padding: 10px;
                 background: white;
@@ -82,7 +81,7 @@
         </div>
     </div>
 
-    <!-- ÉCRAN D'INSCRIPTION -->
+    <!-- ÉCRAN D'INSCRIPTION / ACTIVATION -->
     <div id="auth-screen" class="hidden fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-8 space-y-6 my-auto">
             <div class="text-center">
@@ -127,7 +126,7 @@
                     </div>
                 </div>
                 <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 space-y-3 text-xs">
-                    <div class="flex justify-between font-extrabold text-blue-900 uppercase"><span>Frais d'activation :</span><span class="text-success text-sm">50 000 FCFA</span></div>
+                    <div class="flex justify-between font-extrabold text-blue-900 uppercase"><span>Frais d'activation :</span><span class="text-success text-sm">20 000 FCFA</span></div>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="bg-white p-3 rounded-xl border"><b>Airtel:</b> 074 25 34 44</div>
                         <div class="bg-white p-3 rounded-xl border"><b>Moov:</b> 062 90 66 77</div>
@@ -404,7 +403,7 @@
                 </tr>
             </thead>
             <tbody id="receipt-items-body">
-                <!-- Articles injectés dynamiquement -->
+                <!-- Articles injectés -->
             </tbody>
         </table>
         <div style="border-bottom: 1px dashed #000; margin: 5px 0;"></div>
