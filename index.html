@@ -135,7 +135,7 @@
             </div>
             <nav class="flex flex-wrap gap-2">
                 <button onclick="switchTab('dashboard', event)" class="nav-btn px-4 py-2 rounded-xl bg-white/20 font-medium text-sm transition"><i class="fa-solid fa-chart-pie mr-1"></i> Tableau de bord</button>
-                <button onclick="switchTab('pos', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-cash-register mr-1"></i> Caisse</button>
+                <button onclick="switchTab('pos', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-cash-register mr-1"></i> Caisse & Retraits</button>
                 <button onclick="switchTab('stock', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-boxes-stacked mr-1"></i> Stock</button>
                 <button onclick="switchTab('subscription', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-id-card mr-1"></i> Abonnement</button>
             </nav>
@@ -143,21 +143,26 @@
 
         <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
             
-            <!-- TABLEAU DE BORD -->
+            <!-- TABLEAU DE BORD (AVEC VENTES DU JOUR) -->
             <section id="tab-dashboard" class="space-y-6">
+                <!-- Bannière d'alerte d'abonnement (si < 7 jours) -->
+                <div id="sub-warning-banner" class="hidden bg-amber-500 text-slate-900 p-4 rounded-2xl font-bold flex justify-between items-center shadow-md">
+                    <span><i class="fa-solid fa-triangle-exclamation mr-2"></i> Attention : Votre abonnement expire bientôt ! Pensez à renouveler (10 000 FCFA).</span>
+                    <button onclick="switchTab('subscription', event)" class="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs">Voir l'abonnement</button>
+                </div>
+
                 <h3 class="text-2xl font-bold text-slate-800">Vue d'ensemble de l'activité</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <!-- Chiffre d'affaires détaillé Cash / Mobile Money -->
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 md:col-span-2 space-y-3">
-                        <p class="text-xs text-slate-500 font-semibold uppercase">Chiffre d'Affaires Total</p>
+                        <p class="text-xs text-slate-500 font-semibold uppercase">Chiffre d'Affaires Global</p>
                         <h4 id="stat-ca" class="text-3xl font-extrabold text-primary">0 FCFA</h4>
                         <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100 text-xs">
                             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-500 block font-semibold">Encaissé en Cash (Espèces)</span>
+                                <span class="text-slate-500 block font-semibold">Total Cash (Espèces)</span>
                                 <span id="stat-ca-cash" class="font-mono text-base font-bold text-success">0 FCFA</span>
                             </div>
                             <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span class="text-slate-500 block font-semibold">Encaissé Mobile Money</span>
+                                <span class="text-slate-500 block font-semibold">Total Mobile Money</span>
                                 <span id="stat-ca-momo" class="font-mono text-base font-bold text-amber-600">0 FCFA</span>
                             </div>
                         </div>
@@ -169,153 +174,103 @@
                     </div>
                 </div>
 
-                <!-- Alertes avec noms de produits -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                    <h4 class="font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Produits en alerte stock bas
-                    </h4>
-                    <div id="dashboard-alerts-list" class="space-y-2">
-                        <p class="text-sm text-slate-400">Aucune alerte de stock pour le moment.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CAISSE MULTI-CLIENTS / TABLES -->
-            <section id="tab-pos" class="hidden space-y-6">
-                <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-800">Module Caisse (Multi-Clients)</h3>
-                        <p class="text-xs text-slate-500">Gérez plusieurs tables ou clients en simultané.</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="new-client-name" placeholder="Nom Client / Table (ex: Table 3)" class="px-3 py-2 border rounded-xl text-sm font-semibold w-48">
-                        <button onclick="addNewClientSession()" class="bg-primary hover:bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold transition">
-                            <i class="fa-solid fa-user-plus mr-1"></i> Ouvrir un compte client
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Onglets des clients actifs -->
-                <div id="clients-tabs" class="flex flex-wrap gap-2 border-b border-slate-200 pb-3"></div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
-                        <h4 class="font-bold text-slate-800"><i class="fa-solid fa-boxes-stacked mr-2 text-primary"></i> Catalogue Articles</h4>
-                        <div id="pos-products-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <p class="text-sm text-slate-400">Sélectionnez un client actif pour commencer.</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 flex flex-col justify-between">
-                        <div>
-                            <div class="flex justify-between items-center mb-3">
-                                <h4 id="active-cart-title" class="font-bold text-slate-800">Panier en cours</h4>
-                                <span id="active-client-badge" class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-bold text-xs">Aucun</span>
-                            </div>
-                            <div id="cart-items" class="space-y-2 max-h-50 overflow-y-auto text-sm divide-y divide-slate-100">
-                                <p class="text-slate-400 text-xs text-center py-4">Sélectionnez ou créez un client</p>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-slate-200 pt-4 space-y-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Téléphone du client (pour Reçu SMS/WhatsApp)</label>
-                                <input type="tel" id="client-phone" placeholder="+241 07..." class="w-full px-3 py-2 border rounded-xl text-sm font-semibold">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mode de règlement</label>
-                                <select id="payment-method" class="w-full px-3 py-2 border rounded-xl text-sm font-semibold">
-                                    <option value="Espèces">Espèces (Cash)</option>
-                                    <option value="Airtel Money">Airtel Money</option>
-                                    <option value="Moov Money">Moov Money</option>
-                                </select>
-                            </div>
-                            <div class="flex justify-between items-center font-bold text-lg">
-                                <span>Total :</span>
-                                <span id="cart-total" class="text-success">0 FCFA</span>
-                            </div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button onclick="checkoutSale('print')" class="bg-primary hover:bg-blue-900 text-white font-bold py-2.5 rounded-xl transition text-xs shadow-md">
-                                    <i class="fa-solid fa-print mr-1"></i> Encaisser & Imprimer
-                                </button>
-                                <button onclick="checkoutSale('whatsapp')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl transition text-xs shadow-md">
-                                    <i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp / SMS
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- STOCK & SEUIL D'ALERTE -->
-            <section id="tab-stock" class="hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl">
-                    <h4 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <i class="fa-solid fa-plus-circle text-primary"></i> Ajouter un nouvel article & Seuil d'alerte
-                    </h4>
-                    <form id="add-product-form" onsubmit="handleAddProduct(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'article</label>
-                            <input type="text" id="prod-name" required placeholder="Ex: Régab 65cl" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prix Unitaire (FCFA)</label>
-                                <input type="number" id="prod-price" required placeholder="1000" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Stock Initial</label>
-                                <input type="number" id="prod-qty" required placeholder="50" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Seuil d'alerte</label>
-                                <input type="number" id="prod-alert" required value="5" class="w-full px-3 py-2 border rounded-xl text-sm font-mono">
-                            </div>
-                        </div>
-                        <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3 rounded-xl transition text-sm shadow-md">
-                            Enregistrer l'article
-                        </button>
-                    </form>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-6 border-b border-slate-200">
-                        <h4 class="font-bold text-slate-800"><i class="fa-solid fa-boxes-stacked mr-2 text-primary"></i> Inventaire & Signalement d'Alertes</h4>
+                <!-- Section Ventes du Jour -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-day text-primary"></i> Ventes du Jour (<span id="today-date-label">-</span>)
+                        </h4>
+                        <span id="stat-today-total" class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold text-sm">0 FCFA</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
                                 <tr>
-                                    <th class="p-4">Article</th>
-                                    <th class="p-4">Prix Unitaire</th>
-                                    <th class="p-4">Stock Restant</th>
-                                    <th class="p-4">Statut / Alerte</th>
-                                    <th class="p-4 text-right">Actions</th>
+                                    <th class="p-3">Heure</th>
+                                    <th class="p-3">Client / Table</th>
+                                    <th class="p-3">Mode de Paiement</th>
+                                    <th class="p-3 text-right">Montant</th>
                                 </tr>
                             </thead>
-                            <tbody id="inventory-table-body" class="divide-y divide-slate-200 text-sm">
-                                <tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>
+                            <tbody id="today-orders-body" class="divide-y divide-slate-200 text-xs">
+                                <tr><td colspan="4" class="p-4 text-center text-slate-400">Aucune vente enregistrée aujourd'hui.</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </section>
 
-            <!-- ABONNEMENT -->
-            <section id="tab-subscription" class="hidden space-y-4">
-                <h3 class="text-2xl font-bold text-slate-800">État de votre Abonnement Gabstock</h3>
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-lg space-y-4">
-                    <p class="text-sm">Statut : <span id="sub-badge" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs">Actif</span></p>
-                    <p class="text-sm text-slate-600">Prochaine échéance (10 000 FCFA) : <strong id="sub-due" class="font-mono">-</strong></p>
-                    <div class="bg-amber-50 p-4 rounded-xl text-xs space-y-2 border border-amber-200">
-                        <p class="font-bold text-amber-900">Renouvellement mensuel :</p>
-                        <p>Transférez sur Airtel Money (<strong>074 25 34 44</strong>) ou Moov Money (<strong>062 90 66 77</strong>) puis contactez le support WhatsApp.</p>
+                <!-- Alertes Stock -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                    <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Produits en alerte stock bas
+                    </h4>
+                    <div id="dashboard-alerts-list" class="space-y-2">
+                        <p class="text-sm text-slate-400">Aucune alerte de stock.</p>
                     </div>
                 </div>
             </section>
-        </main>
-    </div>
 
-    <script src="app.js"></script>
-</body>
-</html>
+            <!-- CAISSE, ENCAISSEMENT & RETRAITS DE CAISSE -->
+            <section id="tab-pos" class="hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Colonne gauche : Gestion de caisse & Retraits -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-2"><i class="fa-solid fa-wallet mr-2 text-primary"></i> Trésorerie de Caisse</h4>
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+                                <div class="flex justify-between"><span>Total Encaissé :</span> <strong id="cashbox-total" class="font-mono text-success">0 FCFA</strong></div>
+                                <div class="flex justify-between"><span>Total Retirés :</span> <strong id="cashbox-withdrawals" class="font-mono text-rose-600">0 FCFA</strong></div>
+                                <div class="border-t pt-2 flex justify-between text-sm font-bold"><span>Solde Réel en Caisse :</span> <strong id="cashbox-balance" class="font-mono text-primary">0 FCFA</strong></div>
+                            </div>
+                        </div>
+
+                        <!-- Formulaire de retrait -->
+                        <div class="border-t pt-4 space-y-3">
+                            <h5 class="font-bold text-xs text-slate-700 uppercase"><i class="fa-solid fa-hand-holding-dollar mr-1"></i> Effectuer un retrait de caisse</h5>
+                            <form onsubmit="handleCashWithdrawal(event)" class="space-y-3">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Motif du retrait</label>
+                                    <input type="text" id="withdrawal-reason" required placeholder="Ex: Achat glace / Fournisseur" class="w-full px-3 py-2 border rounded-xl text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Montant (FCFA)</label>
+                                    <input type="number" id="withdrawal-amount" required placeholder="5000" class="w-full px-3 py-2 border rounded-xl text-xs font-mono">
+                                </div>
+                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                                    Valider le retrait de caisse
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Colonne centrale & droite : Catalogue & Panier Multi-clients -->
+                    <div class="md:col-span-2 space-y-6">
+                        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800">Caisse & Commandes</h3>
+                                <p class="text-xs text-slate-500">Gérez plusieurs tables ou clients simultanément.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="new-client-name" placeholder="Nom Client / Table" class="px-3 py-2 border rounded-xl text-xs font-semibold w-36">
+                                <button onclick="addNewClientSession()" class="bg-primary hover:bg-blue-900 text-white px-3 py-2 rounded-xl text-xs font-bold transition">
+                                    <i class="fa-solid fa-user-plus mr-1"></i> Ouvrir client
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="clients-tabs" class="flex flex-wrap gap-2 pb-2"></div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+                                <h4 class="font-bold text-slate-800 text-xs uppercase"><i class="fa-solid fa-boxes-stacked mr-1 text-primary"></i> Catalogue</h4>
+                                <div id="pos-products-grid" class="space-y-2 max-h-60 overflow-y-auto">
+                                    <p class="text-xs text-slate-400">Ouvrez ou sélectionnez un client.</p>
+                                </div>
+                            </div>
+
+                            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3 flex flex-col justify-between">
+                                <div>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 id="active-cart-title" class="font-bold text-slate-800 text-xs uppercase">Panier en cours</h4>
+                                        <span id="active-client-badge" class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-bold text-[10px]">Aucun</span>
+                        
