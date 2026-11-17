@@ -1,76 +1,73 @@
 -- =========================================================================
--- GABSTOCK - Schéma complet PostgreSQL / Supabase (Production)
+-- GABSTOCK - SCHÉMA DE BASE DE DONNÉES SUPABASE (MULTITENANT & SAAS)
 -- =========================================================================
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
--- 1. Table des établissements (Tenants)
-CREATE TABLE establishments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(150) NOT NULL,
-    activity_type VARCHAR(50) CHECK (activity_type IN ('bar', 'bar-restaurant', 'boutique')) NOT NULL,
-    phone VARCHAR(30) NOT NULL,
-    city VARCHAR(100) DEFAULT 'Libreville',
+-- 1. Table des Établissements (Tenants)
+CREATE TABLE IF NOT EXISTS establishments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    activity_type TEXT NOT NULL CHECK (activity_type IN ('bar', 'bar-restaurant', 'boutique')),
+    phone TEXT NOT NULL,
     setup_fee_paid BOOLEAN DEFAULT FALSE,
-    subscription_status VARCHAR(20) DEFAULT 'pending' CHECK (subscription_status IN ('pending', 'active', 'expired')),
+    subscription_status TEXT NOT NULL DEFAULT 'pending' CHECK (subscription_status IN ('pending', 'active', 'expired')),
     next_due_date TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Table des preuves de paiement SaaS (50 000 FCFA & 10 000 FCFA)
-CREATE TABLE saas_payments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 2. Table des Paiements SaaS (Frais d'activation 50k + Abonnements 10k)
+CREATE TABLE IF NOT EXISTS saas_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     establishment_id UUID REFERENCES establishments(id) ON DELETE CASCADE,
-    amount DECIMAL(12, 2) NOT NULL,
-    payment_type VARCHAR(30) CHECK (payment_type IN ('setup_fee', 'monthly_subscription')) NOT NULL,
-    reference_number VARCHAR(150) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    amount NUMERIC NOT NULL,
+    payment_type TEXT NOT NULL CHECK (payment_type IN ('setup_fee', 'subscription_renewal')),
+    reference_number TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Table des produits et stocks
-CREATE TABLE products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 3. Table des Produits / Catalogue par Établissement
+CREATE TABLE IF NOT EXISTS products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     establishment_id UUID REFERENCES establishments(id) ON DELETE CASCADE,
-    name VARCHAR(150) NOT NULL,
-    category VARCHAR(100) NOT NULL,
-    unit_price DECIMAL(12, 2) NOT NULL,
-    stock_quantity INT DEFAULT 0,
-    low_stock_alert INT DEFAULT 5,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    name TEXT NOT NULL,
+    category TEXT DEFAULT 'Général',
+    price NUMERIC NOT NULL DEFAULT 0,
+    unit_price NUMERIC DEFAULT 0,
+    stock_quantity INTEGER NOT NULL DEFAULT 0,
+    alert_threshold INTEGER DEFAULT 5,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Table des commandes / tables
-CREATE TABLE orders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 4. Table des Commandes / Ventes (POS)
+CREATE TABLE IF NOT EXISTS orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     establishment_id UUID REFERENCES establishments(id) ON DELETE CASCADE,
-    table_or_client VARCHAR(100) NOT NULL,
-    status VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'closed', 'cancelled')),
-    payment_method VARCHAR(20) CHECK (payment_method IN ('cash', 'mobile_money', NULL)),
-    total_amount DECIMAL(12, 2) DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    table_or_client TEXT DEFAULT 'Comptoir',
+    total_amount NUMERIC NOT NULL DEFAULT 0,
+    payment_method TEXT DEFAULT 'Espèces' CHECK (payment_method IN ('Espèces', 'Airtel Money', 'Moov Money')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 5. Table des retraits de caisse
-CREATE TABLE cash_withdrawals (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 5. Table des Décaissements / Retraits de Caisse
+CREATE TABLE IF NOT EXISTS cash_withdrawals (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     establishment_id UUID REFERENCES establishments(id) ON DELETE CASCADE,
-    amount DECIMAL(12, 2) NOT NULL,
+    amount NUMERIC NOT NULL,
     reason TEXT NOT NULL,
-    source_type VARCHAR(20) CHECK (source_type IN ('cash', 'mobile_money')) DEFAULT 'cash',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    source TEXT NOT NULL CHECK (source IN ('Cash', 'Mobile Money')),
+    responsible TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- =========================================================================
--- POLITIQUES DE SÉCURITÉ (RLS) POUR LE FONCTIONNEMENT IMMÉDIAT DU SAAS
--- =========================================================================
+-- Désactivation temporaire ou configuration RLS pour le prototype
 ALTER TABLE establishments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saas_payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_withdrawals ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Full access establishments" ON establishments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Full access saas_payments" ON saas_payments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Full access products" ON products FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Full access orders" ON orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Full access cash_withdrawals" ON cash_withdrawals FOR ALL USING (true) WITH CHECK (true);
+-- Politiques permissives publiques pour l'application frontend anonyme
+CREATE POLICY "Public establishments" ON establishments FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public payments" ON saas_payments FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public products" ON products FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public orders" ON orders FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public withdrawals" ON cash_withdrawals FOR ALL USING (true) WITH CHECK (true);
