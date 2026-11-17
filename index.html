@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gabstock - Gestion de Stock & Ventes SaaS (Gabon)</title>
-    <!-- Favicon Gabstock -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z'/></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,8 +11,8 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#1E3A8A', // Bleu Outremer
-                        success: '#059669', // Vert Émeraude
+                        primary: '#1E3A8A',
+                        success: '#059669',
                     }
                 }
             }
@@ -25,7 +24,7 @@
 </head>
 <body class="h-full bg-slate-50 font-sans text-slate-900 flex flex-col">
 
-    <!-- ÉCRAN DE CONNEXION (LOGIN) AVEC ŒIL MOT DE PASSE -->
+    <!-- ÉCRAN DE CONNEXION -->
     <div id="login-screen" class="fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6">
             <div class="text-center">
@@ -33,9 +32,7 @@
                     <i class="fa-solid fa-boxes-stacked text-emerald-400"></i> Gab<span class="text-success">stock</span>
                 </div>
                 <h1 class="text-2xl font-extrabold text-slate-800">Connexion Établissement</h1>
-                <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-1">Accédez à votre espace POS & Stock</p>
             </div>
-
             <form onsubmit="handleLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom ou Téléphone</label>
@@ -45,30 +42,25 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe personnel</label>
                     <div class="relative">
                         <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm pr-10">
-                        <button type="button" onclick="togglePassword('login-password', 'eye-login')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                        <button type="button" onclick="togglePassword('login-password', 'eye-login')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">
                             <i id="eye-login" class="fa-solid fa-eye"></i>
                         </button>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3.5 rounded-xl transition shadow-lg text-sm">
-                    Se connecter
-                </button>
+                <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3.5 rounded-xl transition text-sm">Se connecter</button>
             </form>
-
             <div class="text-center pt-2 border-t border-slate-100">
                 <p class="text-xs text-slate-500">Pas encore de compte ? <button onclick="showRegisterScreen()" class="text-primary font-bold hover:underline">Activer mon établissement</button></p>
             </div>
         </div>
     </div>
 
-    <!-- ÉCRAN D'INSCRIPTION & PAIEMENT MOBILE MONEY (SAS) -->
+    <!-- ÉCRAN D'INSCRIPTION -->
     <div id="auth-screen" class="hidden fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-8 space-y-6 my-auto">
             <div class="text-center">
                 <h1 class="text-2xl font-extrabold text-slate-800">Activation de votre Établissement</h1>
-                <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-1">Solution POS & ERP - Gabon (FCFA)</p>
             </div>
-
             <form id="setup-form" onsubmit="handleRegistration(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nom de l'établissement</label>
@@ -79,10 +71,10 @@
                     <input type="tel" id="est-phone" required placeholder="Ex: +241 07 00 00 00" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Définissez votre mot de passe secret</label>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe secret</label>
                     <div class="relative">
-                        <input type="password" id="est-password" required placeholder="Ex: monmotdepasse123" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm pr-10">
-                        <button type="button" onclick="togglePassword('est-password', 'eye-reg')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                        <input type="password" id="est-password" required placeholder="Mot de passe" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm pr-10">
+                        <button type="button" onclick="togglePassword('est-password', 'eye-reg')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400">
                             <i id="eye-reg" class="fa-solid fa-eye"></i>
                         </button>
                     </div>
@@ -107,41 +99,21 @@
                         </label>
                     </div>
                 </div>
-
-                <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-extrabold text-blue-900 uppercase">Frais d'activation :</span>
-                        <span class="text-base font-extrabold text-success">50 000 FCFA</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs">
-                        <div class="bg-white p-3 rounded-xl border border-blue-100">
-                            <span class="font-bold text-orange-600">Airtel Money</span>
-                            <p class="font-mono font-extrabold text-slate-800 text-sm mt-1">074 25 34 44</p>
-                        </div>
-                        <div class="bg-white p-3 rounded-xl border border-blue-100">
-                            <span class="font-bold text-yellow-600">Moov Money</span>
-                            <p class="font-mono font-extrabold text-slate-800 text-sm mt-1">062 90 66 77</p>
-                        </div>
+                <div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-4 space-y-3 text-xs">
+                    <div class="flex justify-between font-extrabold text-blue-900 uppercase"><span>Frais d'activation :</span><span class="text-success text-sm">50 000 FCFA</span></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-white p-3 rounded-xl border"><b>Airtel:</b> 074 25 34 44</div>
+                        <div class="bg-white p-3 rounded-xl border"><b>Moov:</b> 062 90 66 77</div>
                     </div>
                 </div>
-
                 <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Opérateur utilisé</label>
-                        <select id="payment-provider" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
-                            <option value="Airtel Money">Airtel Money (074 25 34 44)</option>
-                            <option value="Moov Money">Moov Money (062 90 66 77)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 uppercase mb-1">ID / Référence SMS</label>
-                        <input type="text" id="payment-ref" required placeholder="Ex: MP261116.1420.A89421" class="w-full px-4 py-3 rounded-xl border border-slate-300 font-mono text-sm">
-                    </div>
+                    <select id="payment-provider" required class="w-full px-4 py-3 rounded-xl border text-sm">
+                        <option value="Airtel Money">Airtel Money (074 25 34 44)</option>
+                        <option value="Moov Money">Moov Money (062 90 66 77)</option>
+                    </select>
+                    <input type="text" id="payment-ref" required placeholder="ID / Référence SMS" class="w-full px-4 py-3 rounded-xl border text-sm font-mono">
                 </div>
-
-                <button type="submit" class="w-full bg-success hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg text-sm">
-                    Soumettre ma preuve & Demander l'accès
-                </button>
+                <button type="submit" class="w-full bg-success hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition text-sm">Soumettre ma preuve</button>
             </form>
             <div class="text-center pt-2">
                 <button onclick="showLoginScreen()" class="text-xs text-slate-500 hover:underline">Déjà inscrit ? Se connecter</button>
@@ -156,14 +128,9 @@
                 <i class="fa-solid fa-hourglass-half animate-spin"></i>
             </div>
             <h2 class="text-2xl font-bold text-slate-800">Paiement en attente de validation</h2>
-            <p class="text-sm text-slate-600">Votre accès sera débloqué dès validation par l'administration.</p>
             <div class="pt-4 space-y-2">
-                <button onclick="checkAccountStatus()" class="w-full bg-primary text-white font-semibold py-3 rounded-xl hover:bg-blue-900 transition text-sm">
-                    Vérifier mon activation
-                </button>
-                <button onclick="logoutToLogin()" class="w-full bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl hover:bg-slate-200 transition text-xs">
-                    Retour à l'accueil
-                </button>
+                <button onclick="checkAccountStatus()" class="w-full bg-primary text-white font-semibold py-3 rounded-xl text-sm">Vérifier mon activation</button>
+                <button onclick="logoutToLogin()" class="w-full bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-xs">Retour</button>
             </div>
         </div>
     </div>
@@ -172,9 +139,7 @@
     <div id="app-container" class="hidden h-full flex flex-col">
         <header class="bg-primary text-white shadow-md px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center gap-3">
-                <div class="bg-white/10 p-2.5 rounded-2xl">
-                    <i class="fa-solid fa-store text-emerald-400 text-xl"></i>
-                </div>
+                <div class="bg-white/10 p-2.5 rounded-2xl"><i class="fa-solid fa-store text-emerald-400 text-xl"></i></div>
                 <div>
                     <h2 id="header-est-name" class="text-lg font-bold">Mon Établissement</h2>
                     <p id="header-est-type" class="text-xs text-blue-200 uppercase tracking-wider font-semibold">Activité</p>
@@ -187,22 +152,26 @@
                     <button onclick="switchTab('stock', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-boxes-stacked mr-1"></i> Stock</button>
                     <button onclick="switchTab('subscription', event)" class="nav-btn px-4 py-2 rounded-xl hover:bg-white/10 font-medium text-sm transition"><i class="fa-solid fa-id-card mr-1"></i> Abonnement</button>
                 </nav>
-                <button onclick="logoutToLogin()" title="Déconnexion" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl text-xs transition">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </button>
+                <button onclick="logoutToLogin()" title="Déconnexion" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl text-xs transition"><i class="fa-solid fa-right-from-bracket"></i></button>
             </div>
         </header>
 
         <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
             
-            <!-- TABLEAU DE BORD -->
+            <!-- TABLEAU DE BORD & BOUTON RAPPORT JOURNALIER -->
             <section id="tab-dashboard" class="space-y-6">
                 <div id="sub-warning-banner" class="hidden bg-amber-500 text-slate-900 p-4 rounded-2xl font-bold flex justify-between items-center shadow-md">
-                    <span><i class="fa-solid fa-triangle-exclamation mr-2"></i> Attention : Votre abonnement expire bientôt ! Pensez à renouveler (10 000 FCFA).</span>
-                    <button onclick="switchTab('subscription', event)" class="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs">Voir l'abonnement</button>
+                    <span><i class="fa-solid fa-triangle-exclamation mr-2"></i> Attention : Votre abonnement expire bientôt !</span>
+                    <button onclick="switchTab('subscription', event)" class="bg-slate-900 text-white px-3 py-1.5 rounded-xl text-xs">Voir</button>
                 </div>
 
-                <h3 class="text-2xl font-bold text-slate-800">Vue d'ensemble de l'activité</h3>
+                <div class="flex flex-wrap justify-between items-center gap-4">
+                    <h3 class="text-2xl font-bold text-slate-800">Vue d'ensemble de l'activité</h3>
+                    <button onclick="printDailyReport()" class="bg-success hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow-md flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Imprimer le Bilan / Rapport du Jour
+                    </button>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3 flex flex-col justify-between">
                         <div>
@@ -210,7 +179,7 @@
                             <h4 id="stat-today-total" class="text-3xl font-extrabold text-success mt-2">0 FCFA</h4>
                         </div>
                         <button onclick="openTodayDetailsModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-list-ul"></i> Voir toutes les ventes du jour
+                            <i class="fa-solid fa-list-ul"></i> Voir le détail des ventes
                         </button>
                     </div>
 
@@ -257,12 +226,7 @@
                     <div class="max-h-80 overflow-y-auto">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
-                                <tr>
-                                    <th class="p-3">Heure</th>
-                                    <th class="p-3">Client / Table</th>
-                                    <th class="p-3">Paiement</th>
-                                    <th class="p-3 text-right">Montant</th>
-                                </tr>
+                                <tr><th class="p-3">Heure</th><th class="p-3">Client / Table</th><th class="p-3">Paiement</th><th class="p-3 text-right">Montant</th></tr>
                             </thead>
                             <tbody id="today-orders-body" class="divide-y divide-slate-200 text-xs">
                                 <tr><td colspan="4" class="p-4 text-center text-slate-400">Aucune vente.</td></tr>
@@ -272,7 +236,7 @@
                 </div>
             </div>
 
-            <!-- CAISSE (AVEC RECHERCHE D'ARTICLES) -->
+            <!-- CAISSE -->
             <section id="tab-pos" class="hidden space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
@@ -287,14 +251,8 @@
                         <div class="border-t pt-4 space-y-3">
                             <h5 class="font-bold text-xs text-slate-700 uppercase">Effectuer un retrait</h5>
                             <form onsubmit="handleCashWithdrawal(event)" class="space-y-3">
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Motif</label>
-                                    <input type="text" id="withdrawal-reason" required placeholder="Ex: Achat glace" class="w-full px-3 py-2 border rounded-xl text-xs">
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-bold text-slate-500 uppercase">Montant (FCFA)</label>
-                                    <input type="number" id="withdrawal-amount" required placeholder="5000" class="w-full px-3 py-2 border rounded-xl text-xs font-mono">
-                                </div>
+                                <input type="text" id="withdrawal-reason" required placeholder="Motif (ex: Achat glace)" class="w-full px-3 py-2 border rounded-xl text-xs">
+                                <input type="number" id="withdrawal-amount" required placeholder="Montant (FCFA)" class="w-full px-3 py-2 border rounded-xl text-xs font-mono">
                                 <button type="submit" class="w-full bg-rose-600 text-white font-bold py-2.5 rounded-xl text-xs">Valider</button>
                             </form>
                         </div>
@@ -312,12 +270,8 @@
                         </div>
                         <div id="clients-tabs" class="flex flex-wrap gap-2 pb-2"></div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <!-- CATALOGUE AVEC RECHERCHE -->
                             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <h4 class="font-bold text-slate-800 text-xs uppercase">Catalogue</h4>
-                                </div>
-                                <input type="text" id="pos-search" oninput="filterPOSProducts()" placeholder="🔍 Rechercher un article..." class="w-full px-3 py-2 border rounded-xl text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                                <input type="text" id="pos-search" oninput="filterPOSProducts()" placeholder="🔍 Rechercher un article..." class="w-full px-3 py-2 border rounded-xl text-xs">
                                 <div id="pos-products-grid" class="space-y-2 max-h-52 overflow-y-auto">
                                     <p class="text-xs text-slate-400">Sélectionnez un client.</p>
                                 </div>
@@ -333,7 +287,7 @@
                                     </div>
                                 </div>
                                 <div class="border-t pt-3 space-y-2">
-                                    <input type="tel" id="client-phone" placeholder="Tél. Reçu WhatsApp (+241...)" class="w-full px-2 py-1.5 border rounded-lg text-xs">
+                                    <input type="tel" id="client-phone" placeholder="Tél. WhatsApp (+241...)" class="w-full px-2 py-1.5 border rounded-lg text-xs">
                                     <select id="payment-method" class="w-full px-2 py-1.5 border rounded-lg text-xs font-semibold">
                                         <option value="Espèces">Espèces (Cash)</option>
                                         <option value="Airtel Money">Airtel Money</option>
@@ -354,7 +308,7 @@
                 </div>
             </section>
 
-            <!-- STOCK -->
+            <!-- STOCK (AVEC AFFICHAGE DES SORTIES DE STOCK) -->
             <section id="tab-stock" class="hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl">
                     <h4 class="font-bold text-slate-800 mb-4">Ajouter ou Réapprovisionner</h4>
@@ -369,14 +323,24 @@
                     </form>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
-                            <tr><th class="p-4">Article</th><th class="p-4">Prix</th><th class="p-4">Stock</th><th class="p-4">Statut</th><th class="p-4 text-right">Actions</th></tr>
-                        </thead>
-                        <tbody id="inventory-table-body" class="divide-y divide-slate-200 text-sm">
-                            <tr><td colspan="5" class="p-6 text-center text-slate-400">Chargement...</td></tr>
-                        </tbody>
-                    </table>
+                    <div class="p-4 border-b bg-slate-50 font-bold text-xs uppercase text-slate-700">Mouvements de stock & Sorties liées aux ventes</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-100 text-slate-600 text-[11px] uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3">Article</th>
+                                    <th class="p-3">Prix</th>
+                                    <th class="p-3">Stock Initial</th>
+                                    <th class="p-3 text-rose-600">Sorties (Ventes)</th>
+                                    <th class="p-3 text-success">Stock Restant</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table-body" class="divide-y divide-slate-200 text-xs">
+                                <tr><td colspan="6" class="p-6 text-center text-slate-400">Chargement...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
