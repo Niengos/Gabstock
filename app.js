@@ -5,7 +5,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let registeredEstablishmentId = localStorage.getItem('gabstock_est_id') || null;
 let clientSessions = [];
 let activeClientId = null;
-let cachedProducts = []; // Pour la recherche instantanée
+let cachedProducts = [];
 
 window.addEventListener('DOMContentLoaded', () => {
     if (registeredEstablishmentId) {
@@ -15,7 +15,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Fonction pour afficher / masquer le mot de passe (Œil)
 function togglePassword(inputId, iconId) {
     const input = document.getElementById(inputId);
     const icon = document.getElementById(iconId);
@@ -99,10 +98,7 @@ async function checkAccountStatus() {
     if (!registeredEstablishmentId) return;
     const { data, error } = await supabaseClient.from('establishments').select('*').eq('id', registeredEstablishmentId).single();
 
-    if (error || !data) {
-        logoutToLogin();
-        return;
-    }
+    if (error || !data) { logoutToLogin(); return; }
 
     if (data.subscription_status === 'active') {
         document.getElementById('login-screen').classList.add('hidden');
@@ -145,6 +141,7 @@ function switchTab(tabId, event) {
 function openTodayDetailsModal() { document.getElementById('today-details-modal').classList.remove('hidden'); }
 function closeTodayDetailsModal() { document.getElementById('today-details-modal').classList.add('hidden'); }
 
+// AJOUT OU RÉAPPROVISIONNEMENT DE STOCK (Gère stock initial, ajouts et initialisation des sorties à 0)
 async function handleAddProduct(event) {
     event.preventDefault();
     if (!registeredEstablishmentId) return;
@@ -159,42 +156,72 @@ async function handleAddProduct(event) {
 
     if (existingProducts && existingProducts.length > 0) {
         const existing = existingProducts[0];
-        const newTotalQty = existing.stock_quantity + addedQty;
-        await supabaseClient.from('products').update({ stock_quantity: newTotalQty, price, unit_price: price, alert_threshold }).eq('id', existing.id);
-        alert(`Article mis à jour ! Total : ${newTotalQty}`);
+        const newStockQty = existing.stock_quantity + addedQty;
+        // On cumule aussi dans initial_stock si on considère le stock de départ + réappros
+        const newInitialStock = (existing.initial_stock || existing.stock_quantity) + addedQty;
+
+        await supabaseClient.from('products').update({ 
+            stock_quantity: newStockQty, 
+            initial_stock: newInitialStock,
+            price, 
+            unit_price: price, 
+            alert_threshold 
+        }).eq('id', existing.id);
+
+        alert(`Réapprovisionnement réussi ! +${addedQty} unités ajoutées (Total : ${newStockQty}).`);
     } else {
-        await supabaseClient.from('products').insert([{ establishment_id: registeredEstablishmentId, name, price, unit_price: price, stock_quantity: addedQty, alert_threshold }]);
-        alert("Article ajouté !");
+        await supabaseClient.from('products').insert([{ 
+            establishment_id: registeredEstablishmentId, 
+            name, 
+            price, 
+            unit_price: price, 
+            stock_quantity: addedQty, 
+            initial_stock: addedQty, 
+            sold_quantity: 0,
+            alert_threshold 
+        }]);
+        alert("Nouvel article enregistré avec succès !");
     }
     document.getElementById('add-product-form').reset();
     loadProducts();
 }
 
+// CHARGEMENT DE L'INVENTAIRE AVEC AFFICHAGE DES SORTIES DE STOCK
 async function loadProducts() {
     if (!registeredEstablishmentId) return;
     const { data } = await supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId);
     const tbody = document.getElementById('inventory-table-body');
     if (!data || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Aucun article.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">Aucun article enregistré.</td></tr>`;
         return;
     }
     tbody.innerHTML = '';
     data.forEach(prod => {
-        const isAlert = prod.stock_quantity <= (prod.alert_threshold || 5);
-        const alertBadge = isAlert ? `<span class="px-2 py-1 bg-rose-100 text-rose-800 rounded-lg text-xs font-bold">Stock Bas</span>` : `<span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold">Normal</span>`;
+        const initial = prod.initial_stock !== undefined ? prod.initial_stock : prod.stock_quantity;
+        const sold = prod.sold_quantity || 0;
+        const remaining = prod.stock_quantity;
+
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50";
-        tr.innerHTML = `<td class="p-4 font-bold">${prod.name}</td><td class="p-4 font-mono">${prod.price.toLocaleString()} F</td><td class="p-4 font-mono font-semibold">${prod.stock_quantity}</td><td class="p-4">${alertBadge}</td><td class="p-4 text-right"><button onclick="deleteProduct('${prod.id}')" class="text-rose-600"><i class="fa-solid fa-trash"></i></button></td>`;
+        tr.innerHTML = `
+            <td class="p-3 font-bold text-slate-800">${prod.name}</td>
+            <td class="p-3 font-mono text-slate-700">${prod.price.toLocaleString()} F</td>
+            <td class="p-3 font-mono text-slate-600">${initial}</td>
+            <td class="p-3 font-mono font-bold text-rose-600">-${sold}</td>
+            <td class="p-3 font-mono font-extrabold text-success">${remaining}</td>
+            <td class="p-3 text-right"><button onclick="deleteProduct('${prod.id}')" class="text-rose-600 p-1.5"><i class="fa-solid fa-trash"></i></button></td>
+        `;
         tbody.appendChild(tr);
     });
 }
 
 async function deleteProduct(prodId) {
-    if (!confirm("Supprimer ?")) return;
+    if (!confirm("Voulez-vous supprimer cet article ?")) return;
     await supabaseClient.from('products').delete().eq('id', prodId);
     loadProducts();
 }
 
+// GESTION CAISSE & ENREGISTREMENT DES SORTIES DE STOCK LORS DE LA VENTE
 function addNewClientSession() {
     const input = document.getElementById('new-client-name');
     const clientName = input.value.trim() || `Client ${clientSessions.length + 1}`;
@@ -222,7 +249,6 @@ function renderClientTabs() {
     updateCartUI();
 }
 
-// CHARGEMENT ET RECHERCHE DANS LE CATALOGUE POS
 async function loadPOSProducts() {
     if (!registeredEstablishmentId) return;
     const { data } = await supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId);
@@ -291,7 +317,7 @@ function updateCartUI() {
     totalEl.innerText = total.toLocaleString() + " FCFA";
 }
 
-// ENCAISSEMENT & FIX WHATSAPP / IMPRESSION
+// ENCAISSEMENT & MISE À JOUR DES SORTIES DE STOCK (sold_quantity)
 async function checkoutSale(actionType) {
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) { alert("Panier vide."); return; }
@@ -300,20 +326,28 @@ async function checkoutSale(actionType) {
     const totalAmount = session.cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     await supabaseClient.from('orders').insert([{ establishment_id: registeredEstablishmentId, table_or_client: session.name, total_amount: totalAmount, payment_method: paymentMethod }]);
+
+    // Décrémenter le stock et incrémenter les sorties (sold_quantity)
     for (const item of session.cart) {
-        await supabaseClient.from('products').update({ stock_quantity: item.stock_quantity - item.quantity }).eq('id', item.id);
+        const currentSold = item.sold_quantity || 0;
+        const newStock = item.stock_quantity - item.quantity;
+        const newSold = currentSold + item.quantity;
+
+        await supabaseClient.from('products').update({ 
+            stock_quantity: newStock,
+            sold_quantity: newSold
+        }).eq('id', item.id);
     }
+
     alert("Vente encaissée avec succès !");
 
-    // Construction propre du reçu encodé pour WhatsApp
     let receiptText = `*REÇU GABSTOCK*\nClient: ${session.name}\n-------------------\n`;
     session.cart.forEach(i => { receiptText += `- ${i.name} x${i.quantity} : ${(i.price*i.quantity).toLocaleString()} F\n`; });
     receiptText += `-------------------\n*TOTAL : ${totalAmount.toLocaleString()} FCFA*\nMode: ${paymentMethod}\nMerci de votre visite !`;
 
     if (actionType === 'whatsapp' && clientPhone) {
         const cleanPhone = clientPhone.replace(/[^0-9]/g, '');
-        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(receiptText)}`;
-        window.open(waUrl, '_blank');
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(receiptText)}`, '_blank');
     } else {
         window.print();
     }
@@ -348,6 +382,92 @@ async function loadCashboxSummary() {
     document.getElementById('cashbox-total').innerText = totalIn.toLocaleString() + " FCFA";
     document.getElementById('cashbox-withdrawals').innerText = totalOut.toLocaleString() + " FCFA";
     document.getElementById('cashbox-balance').innerText = (totalIn - totalOut).toLocaleString() + " FCFA";
+}
+
+// IMPRESSION DU RAPPORT / BILAN DU JOUR
+async function printDailyReport() {
+    if (!registeredEstablishmentId) return;
+    const { data: prods } = await supabaseClient.from('products').select('*').eq('establishment_id', registeredEstablishmentId);
+    const { data: ords } = await supabaseClient.from('orders').select('*').eq('establishment_id', registeredEstablishmentId);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    let todayTotal = 0;
+    let todayOrders = [];
+
+    if (ords) {
+        ords.forEach(o => {
+            const orderDate = o.created_at ? o.created_at.split('T')[0] : '';
+            if (orderDate === todayStr) {
+                todayTotal += Number(o.total_amount);
+                todayOrders.push(o);
+            }
+        });
+    }
+
+    let reportWindow = window.open('', '_blank');
+    let htmlContent = `
+        <html>
+        <head>
+            <title>Rapport Journalier - Gabstock</title>
+            <style>
+                body { font-family: sans-serif; padding: 20px; color: #1e293b; max-width: 600px; margin: auto; }
+                h2, h3 { text-align: center; margin-bottom: 5px; }
+                .subtitle { text-align: center; font-size: 12px; color: #64748b; margin-bottom: 20px; }
+                table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+                th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+                th { background-color: #f1f5f9; }
+                .total { font-weight: bold; text-align: right; margin-top: 15px; font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <h2>GABSTOCK - BILAN DE LA JOURNÉE</h2>
+            <div class="subtitle">Date : ${new Date().toLocaleDateString()}</div>
+            
+            <h3>Chiffre d'Affaires du Jour : <span style="color: #059669;">${todayTotal.toLocaleString()} FCFA</span></h3>
+            <p>Nombre de commandes encaissées : <b>${todayOrders.length}</b></p>
+
+            <h3>Mouvements de Stock du Jour</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Article</th>
+                        <th>Stock Initial</th>
+                        <th>Sorties (Ventes)</th>
+                        <th>Reste (Stock Final)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    if (prods) {
+        prods.forEach(p => {
+            const initial = p.initial_stock !== undefined ? p.initial_stock : p.stock_quantity;
+            const sold = p.sold_quantity || 0;
+            htmlContent += `
+                <tr>
+                    <td><b>${p.name}</b></td>
+                    <td>${initial}</td>
+                    <td style="color: #dc2626;">-${sold}</td>
+                    <td><b>${p.stock_quantity}</b></td>
+                </tr>
+            `;
+        });
+    }
+
+    htmlContent += `
+                </tbody>
+            </table>
+            <div style="margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px;">
+                <div>Signature du Gérant : ___________________</div>
+                <div>Visa Administration : ___________________</div>
+            </div>
+            <script>window.print();</script>
+        </body>
+        </html>
+    `;
+
+    reportWindow.document.write(htmlContent);
+    reportWindow.document.close();
 }
 
 async function loadDashboardStats() {
