@@ -23,66 +23,127 @@
 </head>
 <body class="h-full bg-slate-100 font-sans text-slate-900 flex flex-col">
 
-    <header class="bg-primary text-white shadow-md px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="bg-white/10 p-2.5 rounded-2xl">
-                <i class="fa-solid fa-shield-halved text-2xl text-emerald-400"></i>
+    <!-- ÉCRAN DE CONNEXION SUPER-ADMIN -->
+    <div id="admin-login-screen" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 space-y-6">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center bg-primary p-4 rounded-2xl shadow-lg mb-3 text-white text-2xl font-black">
+                    <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-800">Super-Admin Gabstock</h1>
+                <p class="text-xs text-slate-500 uppercase tracking-widest font-semibold mt-1">Accès Sécurisé Réservé</p>
             </div>
-            <div>
-                <h1 class="text-xl font-extrabold flex items-center gap-2">Gab<span class="text-success">stock</span> <span class="bg-amber-500 text-slate-900 text-xs px-2 py-0.5 rounded-full font-bold uppercase">Super-Admin</span></h1>
-                <p class="text-xs text-blue-200">Centre de contrôle global & Validation Mobile Money</p>
-            </div>
-        </div>
-    </header>
-
-    <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-xs text-slate-500 font-bold uppercase">Revenu Global Encaissé</p>
-                <h3 id="kpi-revenue" class="text-3xl font-extrabold text-success mt-2">0 FCFA</h3>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-xs text-slate-500 font-bold uppercase">Établissements Actifs</p>
-                <h3 id="kpi-active" class="text-3xl font-extrabold text-primary mt-2">0</h3>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-xs text-slate-500 font-bold uppercase">En Attente de Validation</p>
-                <h3 id="kpi-pending" class="text-3xl font-extrabold text-amber-600 mt-2">0</h3>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 border-b border-slate-200 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-store mr-2 text-primary"></i> Liste des Établissements & Preuves de Paiement</h3>
-                <button onclick="loadEstablishments()" class="bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-700 transition">
-                    <i class="fa-solid fa-rotate mr-1"></i> Actualiser
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Identifiant Administrateur</label>
+                    <input type="text" id="admin-user" required placeholder="admin" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Mot de passe</label>
+                    <input type="password" id="admin-pass" required placeholder="••••••••" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm">
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3.5 rounded-xl transition shadow-lg text-sm">
+                    Se connecter au panneau
                 </button>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
-                        <tr>
-                            <th class="p-4">Établissement</th>
-                            <th class="p-4">Contact & Type</th>
-                            <th class="p-4">Référence Mobile Money</th>
-                            <th class="p-4">Statut</th>
-                            <th class="p-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="est-table-body" class="divide-y divide-slate-200 text-sm">
-                        <tr><td colspan="5" class="p-8 text-center text-slate-400">Chargement...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            </form>
         </div>
-    </main>
+    </div>
+
+    <!-- CONTENU PRINCIPAL SUPER-ADMIN -->
+    <div id="admin-app" class="hidden h-full flex flex-col">
+        <header class="bg-primary text-white shadow-md px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white/10 p-2.5 rounded-2xl">
+                    <i class="fa-solid fa-shield-halved text-2xl text-emerald-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold flex items-center gap-2">Gab<span class="text-success">stock</span> <span class="bg-amber-500 text-slate-900 text-xs px-2 py-0.5 rounded-full font-bold uppercase">Super-Admin</span></h1>
+                    <p class="text-xs text-blue-200">Centre de contrôle global & Validation Mobile Money</p>
+                </div>
+            </div>
+            <button onclick="logoutAdmin()" class="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-xl text-xs font-semibold transition">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> Déconnexion
+            </button>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <p class="text-xs text-slate-500 font-bold uppercase">Revenu Global Encaissé</p>
+                    <h3 id="kpi-revenue" class="text-3xl font-extrabold text-success mt-2">0 FCFA</h3>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <p class="text-xs text-slate-500 font-bold uppercase">Établissements Actifs</p>
+                    <h3 id="kpi-active" class="text-3xl font-extrabold text-primary mt-2">0</h3>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <p class="text-xs text-slate-500 font-bold uppercase">En Attente de Validation</p>
+                    <h3 id="kpi-pending" class="text-3xl font-extrabold text-amber-600 mt-2">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-store mr-2 text-primary"></i> Liste des Établissements & Preuves de Paiement</h3>
+                    <button onclick="loadEstablishments()" class="bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-sm font-semibold text-slate-700 transition">
+                        <i class="fa-solid fa-rotate mr-1"></i> Actualiser
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
+                            <tr>
+                                <th class="p-4">Établissement</th>
+                                <th class="p-4">Contact & Type</th>
+                                <th class="p-4">Référence Mobile Money</th>
+                                <th class="p-4">Statut</th>
+                                <th class="p-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="est-table-body" class="divide-y divide-slate-200 text-sm">
+                            <tr><td colspan="5" class="p-8 text-center text-slate-400">Chargement...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://qmyseukcqlkphsxiivrm.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFteXNldWtjcWxrcGhzeGlpdnJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3OTIyMzksImV4cCI6MjExMDM2ODIzOX0.srJB8lCXD6e58SJ-ceiNYLBUmf0TOdgViMcFc3QMwI8';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        window.addEventListener('DOMContentLoaded', () => { loadEstablishments(); });
+        window.addEventListener('DOMContentLoaded', () => {
+            if (localStorage.getItem('gabstock_admin_auth') === 'true') {
+                showAdminApp();
+            }
+        });
+
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+
+            // Identifiants administrateur sécurisés par défaut (modifiable ici)
+            if (user === 'admin' && pass === 'Gabstock2026@') {
+                localStorage.setItem('gabstock_admin_auth', 'true');
+                showAdminApp();
+            } else {
+                alert("Identifiant ou mot de passe incorrect.");
+            }
+        }
+
+        function showAdminApp() {
+            document.getElementById('admin-login-screen').classList.add('hidden');
+            document.getElementById('admin-app').classList.remove('hidden');
+            loadEstablishments();
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('gabstock_admin_auth');
+            location.reload();
+        }
 
         async function loadEstablishments() {
             const { data: ests } = await supabaseClient.from('establishments').select('*').order('created_at', { ascending: false });
