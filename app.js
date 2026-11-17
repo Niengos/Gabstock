@@ -63,7 +63,6 @@ async function checkAccountStatus() {
             const dueDate = new Date(data.next_due_date);
             document.getElementById('sub-due').innerText = dueDate.toLocaleDateString();
             
-            // Calcul de l'alerte à 7 jours
             const diffDays = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
             if (diffDays <= 7 && diffDays >= 0) {
                 document.getElementById('sub-warning-banner').classList.remove('hidden');
@@ -93,7 +92,10 @@ function switchTab(tabId, event) {
     if (tabId === 'stock') loadProducts();
 }
 
-// AJOUT OU RÉAPPROVISIONNEMENT DE STOCK (ARTICLE FIXÉ)
+function openTodayDetailsModal() { document.getElementById('today-details-modal').classList.remove('hidden'); }
+function closeTodayDetailsModal() { document.getElementById('today-details-modal').classList.add('hidden'); }
+
+// AJOUT OU RÉAPPROVISIONNEMENT DE STOCK
 async function handleAddProduct(event) {
     event.preventDefault();
     if (!registeredEstablishmentId) return;
@@ -103,7 +105,6 @@ async function handleAddProduct(event) {
     const addedQty = parseInt(document.getElementById('prod-qty').value);
     const alert_threshold = parseInt(document.getElementById('prod-alert').value);
 
-    // Vérifier si l'article existe déjà pour cet établissement
     const { data: existingProducts } = await supabaseClient
         .from('products')
         .select('*')
@@ -111,7 +112,6 @@ async function handleAddProduct(event) {
         .ilike('name', name);
 
     if (existingProducts && existingProducts.length > 0) {
-        // L'article existe : on met à jour en additionnant la quantité
         const existing = existingProducts[0];
         const newTotalQty = existing.stock_quantity + addedQty;
 
@@ -120,14 +120,13 @@ async function handleAddProduct(event) {
             .update({ stock_quantity: newTotalQty, price: price, unit_price: price, alert_threshold: alert_threshold })
             .eq('id', existing.id);
 
-        if (error) alert("Erreur de mise à jour : " + error.message);
+        if (error) alert("Erreur : " + error.message);
         else {
-            alert(`Article existant détecté ! ${addedQty} unités ajoutées. Nouveau stock total : ${newTotalQty}`);
+            alert(`Article mis à jour ! ${addedQty} unités ajoutées (Total : ${newTotalQty}).`);
             document.getElementById('add-product-form').reset();
             loadProducts();
         }
     } else {
-        // Nouvel article
         const { error } = await supabaseClient.from('products').insert([{
             establishment_id: registeredEstablishmentId, name, price, unit_price: price, stock_quantity: addedQty, alert_threshold
         }]);
@@ -177,7 +176,7 @@ async function deleteProduct(prodId) {
     loadProducts();
 }
 
-// GESTION MULTI-CLIENTS & CAISSE
+// CAISSE & MULTI-CLIENTS
 function addNewClientSession() {
     const input = document.getElementById('new-client-name');
     const clientName = input.value.trim() || `Client ${clientSessions.length + 1}`;
@@ -291,7 +290,6 @@ function updateCartUI() {
     totalEl.innerText = total.toLocaleString() + " FCFA";
 }
 
-// ENCAISSEMENT & ENVOI
 async function checkoutSale(actionType) {
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) { alert("Panier vide."); return; }
@@ -335,7 +333,6 @@ async function checkoutSale(actionType) {
     loadProducts();
 }
 
-// GESTION DES RETRAITS DE CAISSE
 async function handleCashWithdrawal(event) {
     event.preventDefault();
     if (!registeredEstablishmentId) return;
@@ -344,16 +341,12 @@ async function handleCashWithdrawal(event) {
     const amount = parseFloat(document.getElementById('withdrawal-amount').value);
 
     const { error } = await supabaseClient.from('cash_withdrawals').insert([{
-        establishment_id: registeredEstablishmentId,
-        amount: amount,
-        reason: reason,
-        source: 'Cash',
-        responsible: 'Gérant'
+        establishment_id: registeredEstablishmentId, amount, reason, source: 'Cash', responsible: 'Gérant'
     }]);
 
     if (error) alert("Erreur : " + error.message);
     else {
-        alert("Retrait de caisse enregistré avec succès.");
+        alert("Retrait enregistré.");
         document.getElementById('withdrawal-reason').value = '';
         document.getElementById('withdrawal-amount').value = '';
         loadCashboxSummary();
@@ -362,28 +355,21 @@ async function handleCashWithdrawal(event) {
 
 async function loadCashboxSummary() {
     if (!registeredEstablishmentId) return;
-
     const { data: ords } = await supabaseClient.from('orders').select('*').eq('establishment_id', registeredEstablishmentId);
     const { data: withdrawals } = await supabaseClient.from('cash_withdrawals').select('*').eq('establishment_id', registeredEstablishmentId);
 
     let totalIn = 0;
-    if (ords) {
-        ords.forEach(o => { totalIn += Number(o.total_amount); });
-    }
+    if (ords) ords.forEach(o => totalIn += Number(o.total_amount));
 
     let totalOut = 0;
-    if (withdrawals) {
-        withdrawals.forEach(w => { totalOut += Number(w.amount); });
-    }
-
-    const realBalance = totalIn - totalOut;
+    if (withdrawals) withdrawals.forEach(w => totalOut += Number(w.amount));
 
     document.getElementById('cashbox-total').innerText = totalIn.toLocaleString() + " FCFA";
     document.getElementById('cashbox-withdrawals').innerText = totalOut.toLocaleString() + " FCFA";
-    document.getElementById('cashbox-balance').innerText = realBalance.toLocaleString() + " FCFA";
+    document.getElementById('cashbox-balance').innerText = (totalIn - totalOut).toLocaleString() + " FCFA";
 }
 
-// TABLEAU DE BORD (VENTES DU JOUR & STATS)
+// TABLEAU DE BORD (VENTES DU JOUR ÉPURÉES ET GRAPHIQUE 7 JOURS)
 async function loadDashboardStats() {
     if (!registeredEstablishmentId) return;
 
@@ -401,6 +387,16 @@ async function loadDashboardStats() {
     todayBody.innerHTML = '';
     let todayOrdersCount = 0;
 
+    // Préparation pour le graphique des 7 derniers jours
+    let dailyTotals = {};
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateKey = d.toISOString().split('T')[0];
+        const dayLabel = d.toLocaleDateString('fr-FR', { weekday: 'short' });
+        dailyTotals[dateKey] = { label: dayLabel, amount: 0 };
+    }
+
     if (ords) {
         ords.forEach(o => {
             const amt = Number(o.total_amount);
@@ -408,8 +404,13 @@ async function loadDashboardStats() {
             if (o.payment_method === 'Espèces') totalCash += amt;
             else totalMomo += amt;
 
-            // Filtrer les ventes du jour
             const orderDate = o.created_at ? o.created_at.split('T')[0] : '';
+            
+            // Ventilation 7 derniers jours
+            if (dailyTotals[orderDate] !== undefined) {
+                dailyTotals[orderDate].amount += amt;
+            }
+
             if (orderDate === todayStr) {
                 todayTotal += amt;
                 todayOrdersCount++;
@@ -437,6 +438,30 @@ async function loadDashboardStats() {
     document.getElementById('stat-ca-momo').innerText = totalMomo.toLocaleString() + " FCFA";
     document.getElementById('stat-stock-val').innerText = stockVal.toLocaleString() + " FCFA";
     document.getElementById('stat-today-total').innerText = todayTotal.toLocaleString() + " FCFA";
+
+    // Rendu du Graphique 7 jours
+    const barsContainer = document.getElementById('weekly-chart-bars');
+    const labelsContainer = document.getElementById('weekly-chart-labels');
+    barsContainer.innerHTML = '';
+    labelsContainer.innerHTML = '';
+
+    const maxAmount = Math.max(...Object.values(dailyTotals).map(d => d.amount), 10000);
+
+    Object.values(dailyTotals).forEach(day => {
+        const heightPercent = Math.round((day.amount / maxAmount) * 100);
+        
+        const barDiv = document.createElement('div');
+        barDiv.className = "w-full bg-blue-100 hover:bg-primary transition rounded-t-lg flex flex-col justify-end items-center group relative h-full";
+        barDiv.innerHTML = `
+            <div class="absolute -top-7 hidden group-hover:block bg-slate-900 text-white text-[9px] px-1.5 py-0.5 rounded font-mono whitespace-nowrap z-10">${day.amount.toLocaleString()} F</div>
+            <div class="w-full bg-primary rounded-t-lg transition-all" style="height: ${heightPercent}%"></div>
+        `;
+        barsContainer.appendChild(barDiv);
+
+        const labelDiv = document.createElement('div');
+        labelDiv.innerText = day.label;
+        labelsContainer.appendChild(labelDiv);
+    });
 
     // Alertes stock
     const alertsContainer = document.getElementById('dashboard-alerts-list');
