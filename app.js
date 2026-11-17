@@ -169,7 +169,7 @@ async function handleAddProduct(event) {
             alert_threshold 
         }).eq('id', existing.id);
 
-        alert(`Réapprovisionnement réussi ! +${addedQty} unités ajoutées (Total : ${newStockQty}).`);
+        alert(`Réapprovisionnement réussi ! +${addedQty} unités ajoutées.`);
     } else {
         await supabaseClient.from('products').insert([{ 
             establishment_id: registeredEstablishmentId, 
@@ -181,7 +181,7 @@ async function handleAddProduct(event) {
             sold_quantity: 0,
             alert_threshold 
         }]);
-        alert("Nouvel article enregistré avec succès !");
+        alert("Article enregistré !");
     }
     document.getElementById('add-product-form').reset();
     loadProducts();
@@ -316,7 +316,7 @@ function updateCartUI() {
     totalEl.innerText = total.toLocaleString() + " FCFA";
 }
 
-// ENCAISSEMENT & IMPRESSION EXCLUSIVE DU REÇU CLIENT
+// ENCAISSEMENT & IMPRESSION EXCLUSIVE DE LA FACTURE CLIENT
 async function checkoutSale(actionType) {
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) { alert("Panier vide."); return; }
@@ -337,9 +337,7 @@ async function checkoutSale(actionType) {
         }).eq('id', item.id);
     }
 
-    alert("Vente encaissée avec succès !");
-
-    // Remplir les champs du reçu masqué pour impression dédiée
+    // Préparation du reçu masqué pour impression propre
     document.getElementById('receipt-est-name').innerText = currentEstablishmentName.toUpperCase();
     document.getElementById('receipt-date').innerText = new Date().toLocaleString();
     document.getElementById('receipt-client-name').innerText = session.name;
@@ -351,22 +349,24 @@ async function checkoutSale(actionType) {
     session.cart.forEach(i => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td style="text-align: left;">${i.name}</td>
-            <td style="text-align: center;">${i.quantity}</td>
-            <td style="text-align: right;">${(i.price * i.quantity).toLocaleString()} F</td>
+            <td style="text-align: left; padding: 2px 0;">${i.name}</td>
+            <td style="text-align: center; padding: 2px 0;">${i.quantity}</td>
+            <td style="text-align: right; padding: 2px 0;">${(i.price * i.quantity).toLocaleString()} F</td>
         `;
         receiptBody.appendChild(tr);
     });
 
     if (actionType === 'whatsapp' && clientPhone) {
-        let receiptText = `*REÇU ${currentEstablishmentName.toUpperCase()}*\nClient: ${session.name}\n-------------------\n`;
+        let receiptText = `*FACTURE ${currentEstablishmentName.toUpperCase()}*\nClient: ${session.name}\n-------------------\n`;
         session.cart.forEach(i => { receiptText += `- ${i.name} x${i.quantity} : ${(i.price*i.quantity).toLocaleString()} F\n`; });
         receiptText += `-------------------\n*TOTAL : ${totalAmount.toLocaleString()} FCFA*\nMode: ${paymentMethod}\nMerci de votre visite !`;
 
         const cleanPhone = clientPhone.replace(/[^0-9]/g, '');
         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(receiptText)}`, '_blank');
+        alert("Vente encaissée et facture envoyée sur WhatsApp !");
     } else {
-        // Lance uniquement l'impression du reçu facture client
+        alert("Vente encaissée avec succès !");
+        // Déclenche l'impression ciblée uniquement sur le ticket
         window.print();
     }
 
