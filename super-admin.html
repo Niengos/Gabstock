@@ -23,10 +23,9 @@
 </head>
 <body class="h-full bg-slate-100 font-sans text-slate-900 flex flex-col">
 
-    <!-- HEADER SUPER-ADMIN -->
     <header class="bg-primary text-white shadow-md px-6 py-4 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <div class="bg-white/10 p-2.5 rounded-xl">
+            <div class="bg-white/10 p-2.5 rounded-2xl">
                 <i class="fa-solid fa-shield-halved text-2xl text-emerald-400"></i>
             </div>
             <div>
@@ -34,39 +33,24 @@
                 <p class="text-xs text-blue-200">Centre de contrôle global & Validation Mobile Money</p>
             </div>
         </div>
-        <button onclick="openConfigModal()" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-sm font-semibold transition flex items-center gap-2">
-            <i class="fa-solid fa-gear"></i> Configurer Supabase
-        </button>
     </header>
 
-    <!-- CONTENU PRINCIPAL -->
     <main class="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full">
-
-        <!-- KPI FINANCIERS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <p class="text-xs text-slate-500 font-bold uppercase">Revenu Global Encaissé</p>
                 <h3 id="kpi-revenue" class="text-3xl font-extrabold text-success mt-2">0 FCFA</h3>
-                <span class="text-xs text-slate-400 mt-1 block">Frais (50k) + Abonnements (10k)</span>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <p class="text-xs text-slate-500 font-bold uppercase">Établissements Actifs</p>
                 <h3 id="kpi-active" class="text-3xl font-extrabold text-primary mt-2">0</h3>
-                <span class="text-xs text-emerald-600 font-semibold mt-1 block">Licences en cours</span>
             </div>
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                 <p class="text-xs text-slate-500 font-bold uppercase">En Attente de Validation</p>
                 <h3 id="kpi-pending" class="text-3xl font-extrabold text-amber-600 mt-2">0</h3>
-                <span class="text-xs text-amber-500 font-semibold mt-1 block">Paiements à vérifier</span>
-            </div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <p class="text-xs text-slate-500 font-bold uppercase">Suspendus / Expirés</p>
-                <h3 id="kpi-expired" class="text-3xl font-extrabold text-rose-600 mt-2">0</h3>
-                <span class="text-xs text-slate-400 mt-1 block">Accès verrouillés</span>
             </div>
         </div>
 
-        <!-- TABLEAU DE GESTION DES ÉTABLISSEMENTS -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-6 border-b border-slate-200 flex justify-between items-center">
                 <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-store mr-2 text-primary"></i> Liste des Établissements & Preuves de Paiement</h3>
@@ -79,108 +63,96 @@
                     <thead class="bg-slate-50 text-slate-600 text-xs uppercase font-semibold">
                         <tr>
                             <th class="p-4">Établissement</th>
-                            <th class="p-4">Activité & Contact</th>
+                            <th class="p-4">Contact & Type</th>
                             <th class="p-4">Référence Mobile Money</th>
                             <th class="p-4">Statut</th>
-                            <th class="p-4">Échéance</th>
                             <th class="p-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="est-table-body" class="divide-y divide-slate-200 text-sm">
-                        <tr>
-                            <td colspan="6" class="p-8 text-center text-slate-400">Chargement des données Supabase...</td>
-                        </tr>
+                        <tr><td colspan="5" class="p-8 text-center text-slate-400">Chargement...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <!-- MODAL CONFIGURATION SUPABASE -->
-    <div id="config-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <h3 class="text-xl font-bold text-slate-800">Configuration Supabase</h3>
-            <p class="text-xs text-slate-500">Saisis tes identifiants Supabase pour synchroniser ton panneau Super-Admin.</p>
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Project URL</label>
-                    <input type="text" id="cfg-url" placeholder="https://xxxx.supabase.co" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-mono">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Anon Public Key</label>
-                    <input type="password" id="cfg-key" placeholder="eyJhbGciOiJIUzI1Ni..." class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-mono">
-                </div>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="closeConfigModal()" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-semibold text-sm">Annuler</button>
-                <button onclick="saveConfig()" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-blue-900">Enregistrer & Connecter</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        let SUPABASE_URL = localStorage.getItem('gabstock_admin_url') || 'https://qmyseukcqlkphsxiivrm.supabase.co';
-        let SUPABASE_ANON_KEY = localStorage.getItem('gabstock_admin_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFteXNldWtjcWxrcGhzeGlpdnJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3OTIyMzksImV4cCI6MjExMDM2ODIzOX0.srJB8lCXD6e58SJ-ceiNYLBUmf0TOdgViMcFc3QMwI8';
-        let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const SUPABASE_URL = 'https://qmyseukcqlkphsxiivrm.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFteXNldWtjcWxrcGhzeGlpdnJtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3OTIyMzksImV4cCI6MjExMDM2ODIzOX0.srJB8lCXD6e58SJ-ceiNYLBUmf0TOdgViMcFc3QMwI8';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        window.addEventListener('DOMContentLoaded', () => {
-            loadEstablishments();
-        });
-
-        function openConfigModal() {
-            document.getElementById('cfg-url').value = SUPABASE_URL;
-            document.getElementById('cfg-key').value = SUPABASE_ANON_KEY;
-            document.getElementById('config-modal').classList.remove('hidden');
-        }
-
-        function closeConfigModal() {
-            document.getElementById('config-modal').classList.add('hidden');
-        }
-
-        function saveConfig() {
-            SUPABASE_URL = document.getElementById('cfg-url').value.trim();
-            SUPABASE_ANON_KEY = document.getElementById('cfg-key').value.trim();
-            localStorage.setItem('gabstock_admin_url', SUPABASE_URL);
-            localStorage.setItem('gabstock_admin_key', SUPABASE_ANON_KEY);
-            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            closeConfigModal();
-            loadEstablishments();
-        }
+        window.addEventListener('DOMContentLoaded', () => { loadEstablishments(); });
 
         async function loadEstablishments() {
-            const { data: ests, error: estError } = await supabaseClient
-                .from('establishments')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            const { data: payments } = await supabaseClient
-                .from('saas_payments')
-                .select('*');
-
-            if (estError) {
-                document.getElementById('est-table-body').innerHTML = `<tr><td colspan="6" class="p-6 text-center text-rose-600">Erreur Supabase : ${estError.message}</td></tr>`;
-                return;
-            }
+            const { data: ests } = await supabaseClient.from('establishments').select('*').order('created_at', { ascending: false });
+            const { data: payments } = await supabaseClient.from('saas_payments').select('*');
 
             let totalRevenue = 0;
             if (payments) payments.forEach(p => totalRevenue += Number(p.amount));
             document.getElementById('kpi-revenue').innerText = totalRevenue.toLocaleString() + " FCFA";
 
-            let activeCount = 0, pendingCount = 0, expiredCount = 0;
+            let activeCount = 0, pendingCount = 0;
             const tbody = document.getElementById('est-table-body');
             tbody.innerHTML = '';
 
             if (!ests || ests.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400">Aucun établissement inscrit.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400">Aucun établissement inscrit.</td></tr>`;
                 return;
             }
 
-            for (let est of ests) {
+            ests.forEach(est => {
                 if (est.subscription_status === 'active') activeCount++;
-                else if (est.subscription_status === 'pending') pendingCount++;
-                else expiredCount++;
+                else pendingCount++;
 
                 const payInfo = payments ? payments.find(p => p.establishment_id === est.id) : null;
+                const refText = payInfo ? payInfo.reference_number : 'Aucune référence';
+                const icons = { 'bar': '🍸', 'bar-restaurant': '🍽️', 'boutique': '🛍️' };
+                const badges = {
+                    'active': '<span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs">Actif</span>',
+                    'pending': '<span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full font-bold text-xs">En attente</span>',
+                    'expired': '<span class="px-3 py-1 bg-rose-100 text-rose-800 rounded-full font-bold text-xs">Suspendu</span>'
+                };
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-4 font-bold text-slate-800">${icons[est.activity_type] || ''} ${est.name}</td>
+                    <td class="p-4 text-xs text-slate-600">${est.phone} <br><span class="uppercase font-bold text-blue-600">${est.activity_type}</span></td>
+                    <td class="p-4 font-mono text-xs text-slate-700 font-semibold">${refText}</td>
+                    <td class="p-4">${badges[est.subscription_status]}</td>
+                    <td class="p-4 text-right space-x-1">
+                        <button onclick="validatePayment('${est.id}')" title="Valider" class="bg-success text-white p-2 rounded-xl hover:bg-emerald-700"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="deleteEstablishment('${est.id}')" title="Supprimer" class="bg-rose-600 text-white p-2 rounded-xl hover:bg-rose-700"><i class="fa-solid fa-trash"></i></button>
+                        <a href="https://wa.me/${est.phone.replace(/[^0-9]/g, '')}?text=Bonjour,%20votre%20compte%20Gabstock%20est%20actif !" target="_blank" class="inline-block bg-emerald-600 text-white p-2 rounded-xl"><i class="fa-brands fa-whatsapp"></i></a>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('kpi-active').innerText = activeCount;
+            document.getElementById('kpi-pending').innerText = pendingCount;
+        }
+
+        async function validatePayment(estId) {
+            const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+            const { error } = await supabaseClient
+                .from('establishments')
+                .update({ setup_fee_paid: true, subscription_status: 'active', next_due_date: nextMonth })
+                .eq('id', estId);
+
+            if (error) alert("Erreur : " + error.message);
+            else { alert("Compte activé avec succès !"); loadEstablishments(); }
+        }
+
+        async function deleteEstablishment(estId) {
+            if (!confirm("Supprimer cet établissement ?")) return;
+            await supabaseClient.from('establishments').delete().eq('id', estId);
+            loadEstablishments();
+        }
+    </script>
+</body>
+</html>
+yInfo = payments ? payments.find(p => p.establishment_id === est.id) : null;
                 const refText = payInfo ? payInfo.reference_number : 'Aucune référence';
 
                 const icons = { 'bar': '🍸', 'bar-restaurant': '🍽️', 'boutique': '🛍️' };
