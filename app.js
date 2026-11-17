@@ -439,4 +439,21 @@ async function loadDashboardStats() {
     document.getElementById('stat-today-total').innerText = todayTotal.toLocaleString() + " FCFA";
 
     // Alertes stock
-    const alertsContainer = document.getElementById('dashboar
+    const alertsContainer = document.getElementById('dashboard-alerts-list');
+    alertsContainer.innerHTML = '';
+    const alertProducts = prods ? prods.filter(p => p.stock_quantity <= (p.alert_threshold || 5)) : [];
+
+    if (alertProducts.length === 0) {
+        alertsContainer.innerHTML = `<p class="text-sm text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check mr-1"></i> Tous les stocks sont à un niveau satisfaisant.</p>`;
+    } else {
+        alertProducts.forEach(p => {
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs";
+            div.innerHTML = `
+                <span class="font-bold text-rose-900"><i class="fa-solid fa-triangle-exclamation mr-2 text-rose-600"></i> ${p.name}</span>
+                <span class="bg-rose-600 text-white font-mono px-2.5 py-1 rounded-lg font-bold">Stock : ${p.stock_quantity} (Seuil : ${p.alert_threshold || 5})</span>
+            `;
+            alertsContainer.appendChild(div);
+        });
+    }
+}
