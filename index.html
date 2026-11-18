@@ -85,7 +85,7 @@
         </div>
     </div>
 
-    <!-- MODALE DE DÉCOUVERTE / PRÉSENTATION DE L'APPLICATION -->
+    <!-- MODALE DE DÉCOUVERTE / PRÉSENTATION -->
     <div id="demo-modal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 space-y-6 my-auto max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-4">
@@ -116,7 +116,7 @@
                     <div class="p-3 border rounded-xl space-y-1 bg-slate-50">
                         <span class="text-lg">🧾</span>
                         <h4 class="font-bold text-slate-900">Impression & WhatsApp</h4>
-                        <p class="text-slate-500">Imprimez des reçus propres ou envoyez la facture directement par WhatsApp.</p>
+                        <p class="text-slate-500">Imprimez des reçus propres, envoyez par WhatsApp ou encaissez sans facture.</p>
                     </div>
                     <div class="p-3 border rounded-xl space-y-1 bg-slate-50">
                         <span class="text-lg">📦</span>
@@ -389,9 +389,10 @@
                                         <span>Total :</span>
                                         <span id="cart-total" class="text-success font-mono">0 FCFA</span>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        <button onclick="checkoutSale('print')" class="bg-primary text-white font-bold py-2 rounded-lg text-xs">Imprimer</button>
-                                        <button onclick="checkoutSale('whatsapp')" class="bg-emerald-600 text-white font-bold py-2 rounded-lg text-xs">WhatsApp</button>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button onclick="checkoutSale('print')" class="bg-primary hover:bg-blue-900 text-white font-bold py-2 rounded-lg text-xs transition">Imprimer</button>
+                                        <button onclick="checkoutSale('whatsapp')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs transition">WhatsApp</button>
+                                        <button onclick="checkoutSale('none')" class="bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-xs transition">Sans facture</button>
                                     </div>
                                 </div>
                             </div>
@@ -482,7 +483,6 @@
         <div style="text-align: center; font-size: 9px;">Merci de votre visite !</div>
     </div>
 
-    <!-- Script JavaScript pour ouvrir/fermer la modale de démo -->
     <script>
         function openDemoModal() {
             document.getElementById('demo-modal').classList.remove('hidden');
