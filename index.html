@@ -75,8 +75,74 @@
                 </div>
                 <button type="submit" class="w-full bg-primary hover:bg-blue-900 text-white font-bold py-3.5 rounded-xl transition text-sm">Se connecter</button>
             </form>
-            <div class="text-center pt-2 border-t border-slate-100">
-                <p class="text-xs text-slate-500">Pas encore de compte ? <button onclick="showRegisterScreen()" class="text-primary font-bold hover:underline">Activer mon établissement</button></p>
+            
+            <div class="space-y-3 pt-2 border-t border-slate-100 text-center">
+                <p class="text-xs text-slate-500">Pas encore de compte ? <button onclick="showRegisterScreen()" class="text-primary font-bold hover:underline">Activer mon établissement (20 000 F)</button></p>
+                <button onclick="openDemoModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-circle-info text-primary"></i> Qu'est-ce que Gabstock ? (Découvrir / Démo)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALE DE DÉCOUVERTE / PRÉSENTATION DE L'APPLICATION -->
+    <div id="demo-modal" class="hidden fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 space-y-6 my-auto max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary p-2.5 rounded-xl text-white">
+                        <i class="fa-solid fa-boxes-stacked text-emerald-400 text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-800">Bienvenue sur Gabstock</h2>
+                        <p class="text-xs text-slate-500">La solution de gestion conçue pour les commerces au Gabon</p>
+                    </div>
+                </div>
+                <button onclick="closeDemoModal()" class="text-slate-400 hover:text-slate-700 text-xl font-bold"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="space-y-4 text-xs text-slate-700">
+                <div class="bg-blue-50 border border-blue-200 p-4 rounded-2xl space-y-1">
+                    <h3 class="font-bold text-blue-900 text-sm">🎯 Pourquoi utiliser Gabstock ?</h3>
+                    <p>Fini les cahiers déchirés et les erreurs de calcul. Gabstock digitalise votre boutique, bar ou restaurant en vous offrant un outil simple, rapide et adapté aux réalités locales (Airtel & Moov Money).</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="p-3 border rounded-xl space-y-1 bg-slate-50">
+                        <span class="text-lg">🛍️</span>
+                        <h4 class="font-bold text-slate-900">Caisse Multi-Clients</h4>
+                        <p class="text-slate-500">Gérez plusieurs tables ou clients simultanément sans tout effacer.</p>
+                    </div>
+                    <div class="p-3 border rounded-xl space-y-1 bg-slate-50">
+                        <span class="text-lg">🧾</span>
+                        <h4 class="font-bold text-slate-900">Impression & WhatsApp</h4>
+                        <p class="text-slate-500">Imprimez des reçus propres ou envoyez la facture directement par WhatsApp.</p>
+                    </div>
+                    <div class="p-3 border rounded-xl space-y-1 bg-slate-50">
+                        <span class="text-lg">📦</span>
+                        <h4 class="font-bold text-slate-900">Suivi des Stocks</h4>
+                        <p class="text-slate-500">Décrémentation automatique à chaque vente et alertes de stock bas.</p>
+                    </div>
+                    <div class="p-3 border rounded-xl space-y-1 bg-slate-50">
+                        <span class="text-lg">📊</span>
+                        <h4 class="font-bold text-slate-900">Bilan Journalier</h4>
+                        <p class="text-slate-500">Suivez votre chiffre d'affaires Cash / Mobile Money et imprimez votre rapport.</p>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl space-y-2">
+                    <h4 class="font-bold text-emerald-900 text-sm">💡 Comment démarrer ?</h4>
+                    <ol class="list-decimal list-inside space-y-1 text-emerald-800">
+                        <li>Cliquez sur <b>"Activer mon établissement"</b>.</li>
+                        <li>Remplissez vos informations et réglez les frais d'activation uniques de <b>20 000 FCFA</b> via Airtel Money (074 25 34 44) ou Moov Money (062 90 66 77).</li>
+                        <li>Soumettez votre référence et profitez immédiatement de votre espace !</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t flex gap-3">
+                <button onclick="closeDemoModal(); showRegisterScreen();" class="flex-1 bg-success hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs transition">Activer mon établissement maintenant</button>
+                <button onclick="closeDemoModal()" class="px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-xs transition">Fermer</button>
             </div>
         </div>
     </div>
@@ -416,6 +482,15 @@
         <div style="text-align: center; font-size: 9px;">Merci de votre visite !</div>
     </div>
 
+    <!-- Script JavaScript pour ouvrir/fermer la modale de démo -->
+    <script>
+        function openDemoModal() {
+            document.getElementById('demo-modal').classList.remove('hidden');
+        }
+        function closeDemoModal() {
+            document.getElementById('demo-modal').classList.add('hidden');
+        }
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
