@@ -88,7 +88,7 @@ async function handleRegistration(event) {
     registeredEstablishmentId = est.id;
     localStorage.setItem('gabstock_est_id', est.id);
 
-    // Enregistrement des frais d'activation mis à 20 000 FCFA
+    // Enregistrement des frais d'activation fixés à 20 000 FCFA
     await supabaseClient.from('saas_payments').insert([{
         establishment_id: est.id, amount: 20000, payment_type: 'setup_fee', reference_number: `${provider} - ${paymentRef}`
     }]);
@@ -317,6 +317,7 @@ function updateCartUI() {
     totalEl.innerText = total.toLocaleString() + " FCFA";
 }
 
+// ENCAISSEMENT & GESTION DES OPTIONS (Imprimer, WhatsApp, Sans facture)
 async function checkoutSale(actionType) {
     const session = clientSessions.find(s => s.id === activeClientId);
     if (!session || session.cart.length === 0) { alert("Panier vide."); return; }
@@ -337,35 +338,39 @@ async function checkoutSale(actionType) {
         }).eq('id', item.id);
     }
 
-    document.getElementById('receipt-est-name').innerText = currentEstablishmentName.toUpperCase();
-    document.getElementById('receipt-date').innerText = new Date().toLocaleString();
-    document.getElementById('receipt-client-name').innerText = session.name;
-    document.getElementById('receipt-total-amount').innerText = totalAmount.toLocaleString() + " FCFA";
-    document.getElementById('receipt-payment-method').innerText = paymentMethod;
-
-    const receiptBody = document.getElementById('receipt-items-body');
-    receiptBody.innerHTML = '';
-    session.cart.forEach(i => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="text-align: left; padding: 2px 0;">${i.name}</td>
-            <td style="text-align: center; padding: 2px 0;">${i.quantity}</td>
-            <td style="text-align: right; padding: 2px 0;">${(i.price * i.quantity).toLocaleString()} F</td>
-        `;
-        receiptBody.appendChild(tr);
-    });
-
-    if (actionType === 'whatsapp' && clientPhone) {
-        let receiptText = `*FACTURE ${currentEstablishmentName.toUpperCase()}*\nClient: ${session.name}\n-------------------\n`;
-        session.cart.forEach(i => { receiptText += `- ${i.name} x${i.quantity} : ${(i.price*i.quantity).toLocaleString()} F\n`; });
-        receiptText += `-------------------\n*TOTAL : ${totalAmount.toLocaleString()} FCFA*\nMode: ${paymentMethod}\nMerci de votre visite !`;
-
-        const cleanPhone = clientPhone.replace(/[^0-9]/g, '');
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(receiptText)}`, '_blank');
-        alert("Vente encaissée et facture envoyée sur WhatsApp !");
+    if (actionType === 'none') {
+        alert("Vente enregistrée avec succès (Sans facture) !");
     } else {
-        alert("Vente encaissée avec succès !");
-        window.print();
+        document.getElementById('receipt-est-name').innerText = currentEstablishmentName.toUpperCase();
+        document.getElementById('receipt-date').innerText = new Date().toLocaleString();
+        document.getElementById('receipt-client-name').innerText = session.name;
+        document.getElementById('receipt-total-amount').innerText = totalAmount.toLocaleString() + " FCFA";
+        document.getElementById('receipt-payment-method').innerText = paymentMethod;
+
+        const receiptBody = document.getElementById('receipt-items-body');
+        receiptBody.innerHTML = '';
+        session.cart.forEach(i => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align: left; padding: 2px 0;">${i.name}</td>
+                <td style="text-align: center; padding: 2px 0;">${i.quantity}</td>
+                <td style="text-align: right; padding: 2px 0;">${(i.price * i.quantity).toLocaleString()} F</td>
+            `;
+            receiptBody.appendChild(tr);
+        });
+
+        if (actionType === 'whatsapp' && clientPhone) {
+            let receiptText = `*FACTURE ${currentEstablishmentName.toUpperCase()}*\nClient: ${session.name}\n-------------------\n`;
+            session.cart.forEach(i => { receiptText += `- ${i.name} x${i.quantity} : ${(i.price*i.quantity).toLocaleString()} F\n`; });
+            receiptText += `-------------------\n*TOTAL : ${totalAmount.toLocaleString()} FCFA*\nMode: ${paymentMethod}\nMerci de votre visite !`;
+
+            const cleanPhone = clientPhone.replace(/[^0-9]/g, '');
+            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(receiptText)}`, '_blank');
+            alert("Vente encaissée et facture envoyée sur WhatsApp !");
+        } else if (actionType === 'print') {
+            alert("Vente encaissée avec succès !");
+            window.print();
+        }
     }
 
     clientSessions = clientSessions.filter(s => s.id !== activeClientId);
